@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>CHOHO POP · Modo de campo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    body{background:var(--bg);}
+    .campo-wrap{max-width:520px;margin:0 auto;padding:18px 16px 60px;min-height:100vh;}
+    .campo-header{display:flex;align-items:center;gap:10px;padding:16px 4px 22px;}
+    .campo-header .logo{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--choho-red),var(--choho-red-dark));display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;}
+    .campo-header .title{font-weight:800;font-size:16px;}
+    .campo-header .sub{font-size:12px;color:var(--text-faint);}
+    .campo-screen{display:none;}
+    .campo-screen.active{display:block;animation:fadeIn .2s ease;}
+    .action-card{display:flex;align-items:center;gap:14px;padding:18px;margin-bottom:12px;cursor:pointer;}
+    .action-card .ic{font-size:26px;flex:none;width:44px;height:44px;border-radius:12px;background:var(--bg-elevated);display:flex;align-items:center;justify-content:center;}
+    .action-card .txt strong{display:block;font-size:14px;}
+    .action-card .txt span{font-size:12px;color:var(--text-muted);}
+    .user-banner{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;margin-bottom:16px;border-radius:var(--radius);background:var(--bg-card);border:1px solid var(--border);}
+    .user-banner .who strong{display:block;font-size:14px;}
+    .user-banner .who span{font-size:12px;color:var(--text-muted);}
+    .back-btn{display:inline-flex;align-items:center;gap:6px;color:var(--text-muted);font-size:13px;margin-bottom:14px;cursor:pointer;}
+    .pending-card{padding:14px;margin-bottom:10px;}
+    .pending-card .rowline{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-bottom:1px dashed var(--border);}
+    .pending-card .rowline:last-child{border-bottom:none;}
+  </style>
+</head>
+<body>
+  <div class="campo-wrap">
+    <div class="campo-header">
+      <div class="logo">CH</div>
+      <div>
+        <div class="title">CHOHO POP · Modo de campo</div>
+        <div class="sub">Registro rápido de entregas e instalaciones</div>
+      </div>
+    </div>
+
+    <!-- ============ LOGIN ============ -->
+    <section class="campo-screen active" id="pantallaLogin">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Ingresa con tu código</div></div>
+        <div class="field" style="margin-bottom:12px;">
+          <label>Tu nombre</label>
+          <select id="loginPersona"><option value="">Cargando personas...</option></select>
+        </div>
+        <div class="field" style="margin-bottom:16px;">
+          <label>Código de acceso</label>
+          <input type="password" id="loginCodigo" placeholder="Ej: CHOHO2026">
+        </div>
+        <button class="btn btn-primary btn-block" id="btnLogin">Ingresar</button>
+        <div style="font-size:12px;color:var(--text-faint);margin-top:12px;">¿No tienes código? Pide a un administrador que te lo asigne desde "Personas encargadas".</div>
+      </div>
+    </section>
+
+    <!-- ============ MENÚ PRINCIPAL ============ -->
+    <section class="campo-screen" id="pantallaMenu">
+      <div class="user-banner">
+        <div class="who"><strong id="menuNombre">—</strong><span id="menuZona">—</span></div>
+        <button class="btn btn-ghost btn-sm" id="btnLogout">Salir</button>
+      </div>
+
+      <div class="card action-card" id="btnIrEntrega">
+        <div class="ic">📦</div>
+        <div class="txt"><strong>Registrar entrega</strong><span>Material que acabas de entregar en un punto</span></div>
+      </div>
+      <div class="card action-card" id="btnIrVerificacion">
+        <div class="ic">✔</div>
+        <div class="txt"><strong>Registrar verificación</strong><span>Confirma qué material ya quedó instalado</span></div>
+      </div>
+      <div class="card action-card" id="btnIrEvidencias">
+        <div class="ic">🖼</div>
+        <div class="txt"><strong>Ver mis evidencias</strong><span>Fotos y videos que has subido</span></div>
+      </div>
+    </section>
+
+    <!-- ============ NUEVA ENTREGA ============ -->
+    <section class="campo-screen" id="pantallaEntrega">
+      <div class="back-btn" data-back="pantallaMenu">‹ Volver</div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Registrar entrega</div></div>
+        <div class="field" style="margin-bottom:12px;"><label>Cliente / punto / negocio <span style="font-weight:400;color:var(--text-faint);">(opcional)</span></label><input id="ceEntregaPunto"></div>
+        <div class="field" style="margin-bottom:12px;">
+          <label>Dirección / ubicación</label>
+          <input id="ceEntregaDireccion" placeholder="Dirección (opcional si usas GPS)" style="margin-bottom:8px;">
+          <button type="button" class="btn btn-secondary btn-block btn-sm" id="ceBtnUbicacion">📍 Usar mi ubicación</button>
+          <div id="ceUbicacionInfo" style="font-size:12px;color:var(--text-muted);margin-top:6px;"></div>
+        </div>
+        <div class="field" style="margin-bottom:16px;"><label>Observaciones</label><textarea id="ceObservaciones"></textarea></div>
+
+        <h4 style="margin:6px 0 10px;">Material entregado</h4>
+        <div id="ceMaterialLineas"></div>
+        <button class="btn btn-secondary btn-sm btn-block" id="ceBtnAgregarMaterial" style="margin-bottom:16px;">+ Agregar material</button>
+
+        <h4 style="margin:6px 0 10px;">Fotos del material <span style="font-weight:400;color:var(--text-faint);font-size:12px;">(opcional)</span></h4>
+        <label class="drop-camera" for="ceArchivo">📷 Tomar foto o seleccionar fotos</label>
+        <input type="file" id="ceArchivo" accept="image/*,video/*" capture="environment" multiple style="display:none;">
+        <div class="preview-thumbs" id="cePreview"></div>
+
+        <button class="btn btn-primary btn-block" id="ceBtnGuardar" style="margin-top:18px;">Guardar entrega</button>
+      </div>
+    </section>
+
+    <!-- ============ VERIFICACIÓN: LISTA ============ -->
+    <section class="campo-screen" id="pantallaVerificacionLista">
+      <div class="back-btn" data-back="pantallaMenu">‹ Volver</div>
+      <div class="card-header" style="margin-bottom:10px;"><div class="card-title">Pendientes de verificación en tu zona</div></div>
+      <div id="cvListaPendientes"></div>
+    </section>
+
+    <!-- ============ VERIFICACIÓN: FORMULARIO ============ -->
+    <section class="campo-screen" id="pantallaVerificacionForm">
+      <div class="back-btn" data-back="pantallaVerificacionLista">‹ Volver</div>
+      <div class="card">
+        <div class="card-header"><div class="card-title" id="cvMaterialTitulo">Material</div></div>
+        <div class="field" style="margin-bottom:12px;"><label>Cantidad instalada (total)</label><input type="number" min="0" id="cvCantidad"></div>
+        <div class="field" style="margin-bottom:16px;"><label>Observaciones</label><textarea id="cvObservaciones"></textarea></div>
+
+        <h4 style="margin:6px 0 10px;">Evidencia fotográfica / video</h4>
+        <label class="drop-camera" for="cvArchivo">📷 Tomar foto o seleccionar fotos/videos</label>
+        <input type="file" id="cvArchivo" accept="image/*,video/*" capture="environment" multiple style="display:none;">
+        <div class="preview-thumbs" id="cvPreview"></div>
+
+        <button class="btn btn-primary btn-block" id="cvBtnGuardar" style="margin-top:18px;">Guardar verificación</button>
+      </div>
+    </section>
+
+    <!-- ============ EVIDENCIAS ============ -->
+    <section class="campo-screen" id="pantallaEvidencias">
+      <div class="back-btn" data-back="pantallaMenu">‹ Volver</div>
+      <div class="card-header" style="margin-bottom:10px;"><div class="card-title">Evidencias de tu zona</div></div>
+      <div class="gallery-grid" id="ceGaleria"></div>
+    </section>
+
+  </div>
+
+  <div class="modal-backdrop" id="modalMedia">
+    <div class="modal modal-lg">
+      <div class="modal-header"><div class="modal-title">Evidencia</div><button class="modal-close" data-close="modalMedia">✕</button></div>
+      <div class="modal-body" id="modalMediaBody"></div>
+      <div class="modal-footer"><button class="btn btn-secondary" data-close="modalMedia">Cerrar</button></div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <div class="overlay-loading" id="overlayLoading"><div class="spinner"></div><div id="overlayLoadingText" style="color:#fff;font-size:13px;">Procesando...</div></div>
+
+  <script src="/gas-shim.js"></script>
+  <script src="/campo.js"></script>
+</body>
+</html>

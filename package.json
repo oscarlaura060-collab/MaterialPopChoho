@@ -1,0 +1,13 @@
+{
+  "name": "choho-pop",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "CHOHO POP - Control de Material POP (Vercel + Supabase)",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4"
+  }
+}

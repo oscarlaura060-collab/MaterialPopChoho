@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>CHOHO POP · Gestión de Material POP</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div id="app">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="logo">CH</div>
+        <div>
+          <div class="name">CHOHO Colombia</div>
+          <div class="sub">Control de Material POP</div>
+        </div>
+      </div>
+      <nav class="nav" id="nav">
+        <div class="nav-item active" data-view="dashboard"><span class="ic">▦</span> Dashboard</div>
+        <div class="nav-item" data-view="entregas"><span class="ic">📦</span> Entregas</div>
+        <div class="nav-item" data-view="verificacion"><span class="ic">✔</span> Verificación POP</div>
+        <div class="nav-section-label">Catálogos</div>
+        <div class="nav-item" data-view="materiales"><span class="ic">🏷</span> Material POP</div>
+        <div class="nav-item" data-view="personas"><span class="ic">👤</span> Personas encargadas</div>
+        <div class="nav-item" data-view="zonas"><span class="ic">📍</span> Zonas</div>
+        <div class="nav-section-label">Análisis</div>
+        <div class="nav-item" data-view="evidencias"><span class="ic">🖼</span> Evidencias</div>
+        <div class="nav-item" data-view="reportes"><span class="ic">📊</span> Reportes</div>
+        <div class="nav-item" data-view="configuracion"><span class="ic">⚙</span> Configuración</div>
+      </nav>
+      <div class="sidebar-footer">CHOHO POP · v1.0</div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="hamburger" id="btnHamburger">☰</button>
+          <div>
+            <div class="page-title" id="pageTitle">Dashboard</div>
+            <div class="page-sub" id="pageSub">Vista general del cumplimiento de material POP</div>
+          </div>
+        </div>
+        <div class="topbar-right">
+          <div class="user-chip">
+            <div class="user-avatar" id="userAvatar">?</div>
+            <span id="userLabel">Cargando...</span>
+          </div>
+        </div>
+      </header>
+
+      <main class="content">
+
+        <!-- ===================== DASHBOARD ===================== -->
+        <section class="view active" id="view-dashboard">
+          <div id="alertasContainer"></div>
+
+          <div class="kpi-grid" id="kpiGrid"></div>
+
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">Material entregado vs instalado</div>
+              </div>
+              <canvas id="chartEntregadoInstalado" height="140"></canvas>
+            </div>
+            <div class="card">
+              <div class="card-header"><div class="card-title">Cumplimiento por zona</div></div>
+              <div id="zoneBars"></div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-header"><div class="card-title">Material POP entregado por tipo</div></div>
+              <canvas id="chartMaterialTipo" height="180"></canvas>
+            </div>
+            <div class="card">
+              <div class="card-header"><div class="card-title">Estado general</div></div>
+              <canvas id="chartEstadoGeneral" height="180"></canvas>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-header"><div class="card-title">Entregas recientes</div></div>
+              <div class="table-wrap"><table>
+                <thead><tr><th>ID</th><th>Persona</th><th>Zona</th><th>Estado</th></tr></thead>
+                <tbody id="tbodyEntregasRecientes"></tbody>
+              </table></div>
+            </div>
+            <div class="card">
+              <div class="card-header"><div class="card-title">Últimas evidencias</div></div>
+              <div class="gallery-grid" id="galeriaReciente"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================== ENTREGAS ===================== -->
+        <section class="view" id="view-entregas">
+          <div class="toolbar">
+            <div class="search-input"><span class="ic">🔎</span><input id="buscarEntregas" placeholder="Buscar por persona, zona o punto..."></div>
+            <div class="spacer"></div>
+            <button class="btn btn-secondary btn-sm" id="btnLimpiarFiltrosEntregas">Limpiar filtros</button>
+            <button class="btn btn-secondary btn-sm" id="btnExportarEntregas">⬇ Exportar</button>
+            <button class="btn btn-primary" id="btnNuevaEntrega">+ Nueva entrega</button>
+          </div>
+
+          <div class="filters-bar">
+            <select id="filtroZonaEntregas"><option value="">Todas las zonas</option></select>
+            <select id="filtroPersonaEntregas"><option value="">Todas las personas</option></select>
+            <select id="filtroEstadoEntregas">
+              <option value="">Todos los estados</option>
+              <option>Entregado</option><option>Parcialmente verificado</option><option>Verificado</option><option>Cerrado</option>
+            </select>
+            <input type="date" id="filtroFechaDesde">
+            <input type="date" id="filtroFechaHasta">
+          </div>
+
+          <div class="card">
+            <div class="table-wrap"><table>
+              <thead><tr>
+                <th>ID</th><th>Fecha</th><th>Persona</th><th>Zona</th><th>Ciudad</th><th>Punto</th>
+                <th>Entregado</th><th>Instalado</th><th>Pendiente</th><th>Estado</th><th>Registrado por</th><th>Acciones</th>
+              </tr></thead>
+              <tbody id="tbodyEntregas"></tbody>
+            </table></div>
+            <div class="pagination" id="paginacionEntregas"></div>
+          </div>
+        </section>
+
+        <!-- ===================== VERIFICACIÓN ===================== -->
+        <section class="view" id="view-verificacion">
+          <div class="toolbar">
+            <div class="page-sub">Entregas con material pendiente de instalar</div>
+            <div class="spacer"></div>
+            <button class="btn btn-secondary btn-sm" id="btnRefrescarVerificacion">↻ Actualizar</button>
+          </div>
+          <div id="listaVerificacion" class="grid-3"></div>
+        </section>
+
+        <!-- ===================== MATERIALES ===================== -->
+        <section class="view" id="view-materiales">
+          <div class="toolbar">
+            <div class="page-sub">Catálogo de material POP</div>
+            <div class="spacer"></div>
+            <button class="btn btn-primary" id="btnNuevoMaterial">+ Nuevo material</button>
+          </div>
+          <div class="card">
+            <div class="table-wrap"><table>
+              <thead><tr><th>ID</th><th>Nombre</th><th>Categoría</th><th>Unidad</th><th>Estado</th><th>Acciones</th></tr></thead>
+              <tbody id="tbodyMateriales"></tbody>
+            </table></div>
+          </div>
+        </section>
+
+        <!-- ===================== PERSONAS ===================== -->
+        <section class="view" id="view-personas">
+          <div class="toolbar">
+            <div class="page-sub">Personas encargadas por zona</div>
+            <div class="spacer"></div>
+            <button class="btn btn-primary" id="btnNuevaPersona">+ Nueva persona</button>
+          </div>
+          <div class="card">
+            <div class="table-wrap"><table>
+              <thead><tr><th>ID</th><th>Nombre</th><th>Zona</th><th>Ciudad</th><th>Teléfono</th><th>Cargo</th><th>Estado</th><th>Acciones</th></tr></thead>
+              <tbody id="tbodyPersonas"></tbody>
+            </table></div>
+          </div>
+        </section>
+
+        <!-- ===================== ZONAS ===================== -->
+        <section class="view" id="view-zonas">
+          <div class="toolbar">
+            <div class="page-sub">Zonas de cobertura</div>
+            <div class="spacer"></div>
+            <button class="btn btn-primary" id="btnNuevaZona">+ Nueva zona</button>
+          </div>
+          <div class="card">
+            <div class="table-wrap"><table>
+              <thead><tr><th>ID</th><th>Nombre</th><th>Región</th><th>Ciudad principal</th><th>Responsable</th><th>Estado</th><th>Acciones</th></tr></thead>
+              <tbody id="tbodyZonas"></tbody>
+            </table></div>
+          </div>
+        </section>
+
+        <!-- ===================== EVIDENCIAS ===================== -->
+        <section class="view" id="view-evidencias">
+          <div class="filters-bar">
+            <select id="filtroZonaEvidencias"><option value="">Todas las zonas</option></select>
+            <select id="filtroPersonaEvidencias"><option value="">Todas las personas</option></select>
+            <select id="filtroMaterialEvidencias"><option value="">Todos los materiales</option></select>
+            <select id="filtroTipoEvidencias"><option value="">Todos los tipos</option><option value="imagen">Imagen</option><option value="video">Video</option></select>
+            <select id="filtroEtapaEvidencias"><option value="">Entrega y verificación</option><option value="entrega">Solo material entregado</option><option value="verificacion">Solo instalación</option></select>
+          </div>
+          <div class="card">
+            <div class="gallery-grid" id="galeriaEvidencias"></div>
+          </div>
+        </section>
+
+        <!-- ===================== REPORTES ===================== -->
+        <section class="view" id="view-reportes">
+          <div class="filters-bar">
+            <select id="reporteAgruparPor">
+              <option value="zona">Por zona</option>
+              <option value="persona">Por persona</option>
+              <option value="ciudad">Por ciudad</option>
+              <option value="material">Por material</option>
+              <option value="estado">Por estado</option>
+            </select>
+            <select id="reporteFiltroZona"><option value="">Todas las zonas</option></select>
+            <button class="btn btn-secondary btn-sm" id="btnGenerarReporte">Generar reporte</button>
+            <div class="spacer"></div>
+            <button class="btn btn-secondary btn-sm" id="btnExportarReporteExcel">⬇ Exportar Excel (CSV)</button>
+            <button class="btn btn-secondary btn-sm" id="btnExportarReportePDF">🖨 Vista para PDF</button>
+          </div>
+          <div class="card">
+            <div class="table-wrap"><table>
+              <thead><tr><th>Grupo</th><th>Entregado</th><th>Instalado</th><th>Pendiente</th><th>% Cumplimiento</th></tr></thead>
+              <tbody id="tbodyReporte"></tbody>
+            </table></div>
+          </div>
+        </section>
+
+        <!-- ===================== CONFIGURACIÓN ===================== -->
+        <section class="view" id="view-configuracion">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Acerca del sistema</div></div>
+            <p style="color:var(--text-muted);line-height:1.7;">
+              CHOHO POP es el sistema interno de control y verificación de material POP de CHOHO Colombia.
+              Los datos se almacenan en Supabase (PostgreSQL) y las evidencias fotográficas/de video en Supabase Storage.
+              La aplicación está desplegada en Vercel.
+            </p>
+          </div>
+          <div class="card" style="margin-top:16px;">
+            <div class="card-header"><div class="card-title">Modo de campo (para las personas encargadas)</div></div>
+            <p style="color:var(--text-muted);line-height:1.7;">
+              Comparte con cada persona encargada el enlace del modo de campo: <code id="urlModoCampo">/campo</code>
+              (por ejemplo <code>https://tu-dominio.vercel.app/campo</code>). Ahí podrán ingresar con su nombre y su código de acceso
+              (configúralo en "Personas encargadas") para registrar entregas y verificaciones con fotos desde el celular,
+              sin ver el resto del sistema.
+            </p>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ===================== MODALES ===================== -->
+
+  <div class="modal-backdrop" id="modalEntrega">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <div class="modal-title">Registro de entrega POP</div>
+        <button class="modal-close" data-close="modalEntrega">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="field"><label>Fecha de entrega</label><input type="date" id="entregaFecha"></div>
+          <div class="field"><label>Registrado por</label><input id="entregaRegistradoPor" placeholder="Nombre de quien registra"></div>
+          <div class="field"><label>Persona encargada</label><select id="entregaPersona"></select></div>
+          <div class="field"><label>Zona</label><select id="entregaZona"></select></div>
+          <div class="field"><label>Ciudad</label><input id="entregaCiudad"></div>
+          <div class="field"><label>Cliente / punto / negocio <span style="font-weight:400;color:var(--text-faint);">(opcional)</span></label><input id="entregaPunto"></div>
+          <div class="field full">
+            <label>Dirección / ubicación</label>
+            <div style="display:flex;gap:8px;">
+              <input id="entregaDireccion" placeholder="Dirección del punto (opcional si usas ubicación GPS)" style="flex:1;">
+              <button type="button" class="btn btn-secondary btn-sm" id="btnUsarUbicacion" style="flex:none;">📍 Usar mi ubicación</button>
+            </div>
+            <div id="entregaUbicacionInfo" style="font-size:12px;color:var(--text-muted);margin-top:6px;"></div>
+            <input type="hidden" id="entregaLat"><input type="hidden" id="entregaLng">
+          </div>
+          <div class="field full"><label>Observaciones</label><textarea id="entregaObservaciones"></textarea></div>
+        </div>
+
+        <h4 style="margin:18px 0 10px;">Material entregado</h4>
+        <div id="materialLineas"></div>
+        <button class="btn btn-secondary btn-sm" id="btnAgregarMaterial">+ Agregar material</button>
+
+        <h4 style="margin:18px 0 10px;">Fotos del material entregado <span style="font-weight:400;color:var(--text-faint);font-size:12px;">(opcional, quedan visibles en la app)</span></h4>
+        <label class="drop-camera" for="entregaArchivo">📷 Tomar foto o seleccionar fotos del material</label>
+        <input type="file" id="entregaArchivo" accept="image/*,video/*" capture="environment" multiple style="display:none;">
+        <div class="preview-thumbs" id="entregaPreview"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" data-close="modalEntrega">Cancelar</button>
+        <button class="btn btn-primary" id="btnGuardarEntrega">Guardar entrega</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="modalVerDetalle">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <div class="modal-title" id="detalleTitulo">Detalle de entrega</div>
+        <button class="modal-close" data-close="modalVerDetalle">✕</button>
+      </div>
+      <div class="modal-body" id="detalleBody"></div>
+      <div class="modal-footer"><button class="btn btn-secondary" data-close="modalVerDetalle">Cerrar</button></div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="modalVerificar">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Registrar verificación</div>
+        <button class="modal-close" data-close="modalVerificar">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="field full" style="margin-bottom:12px;"><label id="verificarMaterialLabel">Material</label></div>
+        <div class="form-grid">
+          <div class="field"><label>Cantidad instalada (total)</label><input type="number" min="0" id="verificarCantidad"></div>
+          <div class="field"><label>Registrado por</label><input id="verificarRegistradoPor" placeholder="Nombre de quien registra"></div>
+          <div class="field full"><label>Observaciones</label><textarea id="verificarObservaciones"></textarea></div>
+        </div>
+        <h4 style="margin:16px 0 8px;">Evidencia fotográfica / video</h4>
+        <label class="drop-camera" for="verificarArchivo">📷 Tomar foto o seleccionar fotos/videos</label>
+        <input type="file" id="verificarArchivo" accept="image/*,video/*" capture="environment" multiple style="display:none;">
+        <div class="preview-thumbs" id="verificarPreview"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" data-close="modalVerificar">Cancelar</button>
+        <button class="btn btn-primary" id="btnGuardarVerificacion">Guardar verificación</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="modalZona">
+    <div class="modal">
+      <div class="modal-header"><div class="modal-title">Zona</div><button class="modal-close" data-close="modalZona">✕</button></div>
+      <div class="modal-body">
+        <input type="hidden" id="zonaId">
+        <div class="form-grid">
+          <div class="field full"><label>Nombre</label><input id="zonaNombre"></div>
+          <div class="field"><label>Región</label><input id="zonaRegion"></div>
+          <div class="field"><label>Ciudad principal</label><input id="zonaCiudad"></div>
+          <div class="field"><label>Responsable</label><input id="zonaResponsable"></div>
+          <div class="field"><label>Estado</label>
+            <select id="zonaEstado"><option>Activa</option><option>Inactiva</option></select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" data-close="modalZona">Cancelar</button>
+        <button class="btn btn-primary" id="btnGuardarZona">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="modalPersona">
+    <div class="modal">
+      <div class="modal-header"><div class="modal-title">Persona encargada</div><button class="modal-close" data-close="modalPersona">✕</button></div>
+      <div class="modal-body">
+        <input type="hidden" id="personaId">
+        <div class="form-grid">
+          <div class="field full"><label>Nombre completo</label><input id="personaNombre"></div>
+          <div class="field"><label>Teléfono</label><input id="personaTelefono"></div>
+          <div class="field"><label>Correo</label><input id="personaCorreo"></div>
+          <div class="field"><label>Zona asignada</label><select id="personaZona"></select></div>
+          <div class="field"><label>Ciudad</label><input id="personaCiudad"></div>
+          <div class="field"><label>Cargo / rol</label><input id="personaCargo"></div>
+          <div class="field"><label>Estado</label><select id="personaEstado"><option>Activo</option><option>Inactivo</option></select></div>
+          <div class="field full">
+            <label>Código de acceso (Modo de campo)</label>
+            <div style="display:flex;gap:8px;">
+              <input id="personaCodigoAcceso" placeholder="Ej: CHOHO2026" style="flex:1;">
+              <button type="button" class="btn btn-secondary btn-sm" id="btnGenerarCodigo" style="flex:none;">🎲 Generar</button>
+            </div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:6px;">Con este código y su nombre, la persona puede ingresar desde el enlace de Modo de campo para registrar entregas y verificaciones con fotos, sin ver el resto del sistema.</div>
+          </div>
+          <div class="field full"><label>Observaciones</label><textarea id="personaObservaciones"></textarea></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" data-close="modalPersona">Cancelar</button>
+        <button class="btn btn-primary" id="btnGuardarPersona">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="modalMaterial">
+    <div class="modal">
+      <div class="modal-header"><div class="modal-title">Material POP</div><button class="modal-close" data-close="modalMaterial">✕</button></div>
+      <div class="modal-body">
+        <input type="hidden" id="materialId">
+        <div class="form-grid">
+          <div class="field full"><label>Nombre</label><input id="materialNombre"></div>
+          <div class="field"><label>Categoría</label><input id="materialCategoria"></div>
+          <div class="field"><label>Unidad de medida</label><input id="materialUnidad" value="Unidad"></div>
+          <div class="field"><label>Estado</label><select id="materialEstado"><option>Activo</option><option>Inactivo</option></select></div>
+          <div class="field full"><label>Descripción</label><textarea id="materialDescripcion"></textarea></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" data-close="modalMaterial">Cancelar</button>
+        <button class="btn btn-primary" id="btnGuardarMaterial">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="modalMedia">
+    <div class="modal modal-lg">
+      <div class="modal-header"><div class="modal-title">Evidencia</div><button class="modal-close" data-close="modalMedia">✕</button></div>
+      <div class="modal-body" id="modalMediaBody"></div>
+      <div class="modal-footer"><button class="btn btn-secondary" data-close="modalMedia">Cerrar</button></div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <div class="overlay-loading" id="overlayLoading"><div class="spinner"></div><div id="overlayLoadingText" style="color:#fff;font-size:13px;">Procesando...</div></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="/gas-shim.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
