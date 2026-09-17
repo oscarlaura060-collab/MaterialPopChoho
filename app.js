@@ -979,8 +979,25 @@ function abrirMedia(ev) {
     campoInfo('Punto / dirección', ev.punto || ev.direccion || '—') +
     '<div class="field"><label>Ubicación</label><div style="padding-top:4px;">' + campoUbicacionHtml(ev) + '</div></div>' +
     '</div>';
+  if (SESION && SESION.rol === 'Administrador' && ev.idEvidencia) {
+    body += '<div style="margin-top:16px;text-align:right;">' +
+      '<button class="btn btn-secondary btn-sm" style="border-color:var(--choho-red);color:#fca5a5;" onclick="eliminarEvidenciaUI(' + JSON.stringify(ev.idEvidencia) + ')">🗑 Eliminar evidencia</button></div>';
+  }
   document.getElementById('modalMediaBody').innerHTML = body;
   abrirModal('modalMedia');
+}
+
+/** Elimina una evidencia (solo administradores) y refresca la vista activa. */
+function eliminarEvidenciaUI(idEvidencia) {
+  if (!window.confirm('¿Eliminar esta evidencia? La foto/video se borrará de forma permanente.')) return;
+  mostrarCargando('Eliminando evidencia...');
+  google.script.run.withSuccessHandler(function () {
+    ocultarCargando();
+    cerrarModal('modalMedia');
+    toast('Evidencia eliminada.', 'success');
+    if (document.getElementById('view-evidencias').classList.contains('active')) cargarEvidencias();
+    if (document.getElementById('view-dashboard').classList.contains('active')) cargarDashboard();
+  }).withFailureHandler(manejarError).eliminarEvidencia(idEvidencia);
 }
 
 /** Devuelve el enlace de ubicación (Maps) de una evidencia, o un guion si no hay. */
