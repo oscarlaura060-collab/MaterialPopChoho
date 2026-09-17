@@ -659,7 +659,9 @@ function abrirVerificacion(idEntrega, idDetalle, materialNombre) {
   var entrega = STATE.entregas.filter(function (x) { return x.idEntrega === idEntrega; })[0];
   var zonaNombre = entrega ? entrega.zonaNombre : '';
   STATE.verificarContexto = { idEntrega: idEntrega, idDetalle: idDetalle, materialNombre: materialNombre, zonaNombre: zonaNombre };
-  document.getElementById('verificarMaterialLabel').textContent = 'Material: ' + materialNombre + ' (Entrega ' + idEntrega + ')';
+  var mat = entrega ? entrega.materiales.filter(function (m) { return m.idDetalle === idDetalle; })[0] : null;
+  var extra = mat ? ' — Ya instalado: ' + mat.instalado + ' de ' + mat.entregado + ' · Pendiente: ' + mat.pendiente : '';
+  document.getElementById('verificarMaterialLabel').textContent = 'Material: ' + materialNombre + ' (Entrega ' + idEntrega + ')' + extra;
   document.getElementById('verificarCantidad').value = '';
   document.getElementById('verificarObservaciones').value = '';
   document.getElementById('verificarRegistradoPor').value = SESION ? SESION.nombre : '';
@@ -981,7 +983,7 @@ function abrirMedia(ev) {
     '</div>';
   if (SESION && SESION.rol === 'Administrador' && ev.idEvidencia) {
     body += '<div style="margin-top:16px;text-align:right;">' +
-      '<button class="btn btn-secondary btn-sm" style="border-color:var(--choho-red);color:#fca5a5;" onclick="eliminarEvidenciaUI(' + JSON.stringify(ev.idEvidencia) + ')">🗑 Eliminar evidencia</button></div>';
+      '<button class="btn btn-secondary btn-sm" style="border-color:var(--choho-red);color:#fca5a5;" onclick="eliminarEvidenciaUI(\'' + ev.idEvidencia + '\')">🗑 Eliminar evidencia</button></div>';
   }
   document.getElementById('modalMediaBody').innerHTML = body;
   abrirModal('modalMedia');

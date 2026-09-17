@@ -218,7 +218,10 @@ function pintarPendientes() {
 
 function abrirFormVerificacion(idEntrega, idDetalle, materialNombre, zonaNombre) {
   CONTEXTO_VERIFICACION = { idEntrega: idEntrega, idDetalle: idDetalle, materialNombre: materialNombre, zonaNombre: zonaNombre || '' };
-  document.getElementById('cvMaterialTitulo').textContent = materialNombre + ' · ' + idEntrega;
+  var ent = PENDIENTES_CACHE.filter(function (e) { return e.idEntrega === idEntrega; })[0];
+  var mat = ent ? ent.materiales.filter(function (m) { return m.idDetalle === idDetalle; })[0] : null;
+  var extra = mat ? ' (ya ' + mat.instalado + '/' + mat.entregado + ')' : '';
+  document.getElementById('cvMaterialTitulo').textContent = materialNombre + ' · ' + idEntrega + extra;
   document.getElementById('cvCantidad').value = '';
   document.getElementById('cvObservaciones').value = '';
   document.getElementById('cvPreview').innerHTML = '';
