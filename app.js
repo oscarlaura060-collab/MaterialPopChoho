@@ -26,30 +26,97 @@ var ESTADO_BADGE_CLASS = {
 };
 
 /* ============================================================
+   SESIÓN / PERMISOS
+   ============================================================ */
+var SESION = null; // {id, nombre, rol, permisos:[...], zonaId, zonaNombre, ciudad}
+var VISTAS_INFO = {
+  dashboard: 'Dashboard',
+  entregas: 'Entregas',
+  verificacion: 'Verificación POP',
+  materiales: 'Material POP',
+  personas: 'Personas encargadas',
+  zonas: 'Zonas',
+  evidencias: 'Evidencias',
+  reportes: 'Reportes',
+  configuracion: 'Configuración'
+};
+var ORDEN_VISTAS = ['dashboard', 'entregas', 'verificacion', 'materiales', 'personas', 'zonas', 'evidencias', 'reportes', 'configuracion'];
+
+/* ============================================================
    ARRANQUE
    ============================================================ */
 document.addEventListener('DOMContentLoaded', function () {
   configurarNavegacion();
   configurarModales();
   configurarFormularios();
-  mostrarCargando('Cargando aplicación...');
-
-  google.script.run
-    .withSuccessHandler(function (datos) {
-      STATE.usuario = datos.usuario;
-      STATE.catalogos = datos.catalogos;
-      pintarUsuario();
-      poblarSelectsCatalogos();
-      cargarDashboard();
-      ocultarCargando();
-    })
-    .withFailureHandler(manejarError)
-    .obtenerDatosIniciales();
+  configurarLogin();
 });
 
+function configurarLogin() {
+  google.script.run.withSuccessHandler(function (personas) {
+    var sel = document.getElementById('adminLoginPersona');
+    sel.innerHTML = '<option value="">Selecciona tu nombre...</option>' +
+      personas.map(function (p) { return '<option value="' + p.id + '">' + escaparHtml(p.nombre) + '</option>'; }).join('');
+  }).withFailureHandler(manejarError).listarPersonasParaLogin();
+
+  document.getElementById('btnAdminLogin').addEventListener('click', hacerLoginAdmin);
+  document.getElementById('adminLoginCodigo').addEventListener('keydown', function (e) { if (e.key === 'Enter') hacerLoginAdmin(); });
+  document.getElementById('btnLogout').addEventListener('click', cerrarSesion);
+}
+
+function hacerLoginAdmin() {
+  var personaId = document.getElementById('adminLoginPersona').value;
+  var codigo = document.getElementById('adminLoginCodigo').value;
+  if (!personaId) { toast('Selecciona tu nombre.', 'warning'); return; }
+  if (!codigo) { toast('Ingresa tu código de acceso.', 'warning'); return; }
+  mostrarCargando('Verificando...');
+  google.script.run.withSuccessHandler(function (sesion) {
+    SESION = sesion;
+    iniciarApp();
+  }).withFailureHandler(manejarError).iniciarSesionPersona(personaId, codigo);
+}
+
+function iniciarApp() {
+  var primera = primeraVistaPermitida();
+  if (!primera) {
+    ocultarCargando();
+    toast('Tu usuario no tiene secciones asignadas. Para registrar en campo usa el enlace /campo, o pide acceso a un administrador.', 'warning');
+    SESION = null;
+    return;
+  }
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  pintarUsuario();
+  aplicarPermisos();
+  google.script.run.withSuccessHandler(function (datos) {
+    STATE.catalogos = datos.catalogos;
+    poblarSelectsCatalogos();
+    irAVista(primera);
+    ocultarCargando();
+  }).withFailureHandler(manejarError).obtenerDatosIniciales();
+}
+
+function cerrarSesion() {
+  SESION = null;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('adminLoginCodigo').value = '';
+  document.getElementById('loginScreen').style.display = 'flex';
+}
+
+function puedeVer(vista) { return !!(SESION && SESION.permisos && SESION.permisos.indexOf(vista) > -1); }
+function primeraVistaPermitida() {
+  for (var i = 0; i < ORDEN_VISTAS.length; i++) { if (puedeVer(ORDEN_VISTAS[i])) return ORDEN_VISTAS[i]; }
+  return '';
+}
+function aplicarPermisos() {
+  document.querySelectorAll('.nav-item[data-view]').forEach(function (item) {
+    item.style.display = puedeVer(item.getAttribute('data-view')) ? '' : 'none';
+  });
+}
+
 function pintarUsuario() {
-  var label = STATE.usuario.email ? STATE.usuario.email : 'Usuario sin sesión de Google';
-  document.getElementById('userLabel').textContent = label;
+  var label = (SESION && SESION.nombre) ? SESION.nombre : '—';
+  document.getElementById('userLabel').textContent = label + (SESION && SESION.rol ? ' · ' + SESION.rol : '');
   document.getElementById('userAvatar').textContent = label.charAt(0).toUpperCase();
 }
 
@@ -96,7 +163,8 @@ function irAVista(nombre) {
   if (nombre === 'personas') cargarPersonas();
   if (nombre === 'zonas') cargarZonas();
   if (nombre === 'evidencias') cargarEvidencias();
-  if (nombre === 'reportes') { /* se genera bajo demanda */ }
+  if (nombre === 'reportes') generarReporteUI();
+  if (nombre === 'configuracion') cargarUsuarios();
 }
 
 /* ============================================================
@@ -395,7 +463,7 @@ function configurarFormularios() {
     STATE.materialLineaCount = 0;
     agregarLineaMaterial();
     document.getElementById('entregaFecha').value = new Date().toISOString().slice(0, 10);
-    document.getElementById('entregaRegistradoPor').value = '';
+    document.getElementById('entregaRegistradoPor').value = SESION ? SESION.nombre : '';
     ['entregaPersona', 'entregaZona', 'entregaCiudad', 'entregaPunto', 'entregaDireccion', 'entregaObservaciones', 'entregaLat', 'entregaLng'].forEach(function (id) {
       document.getElementById(id).value = '';
     });
@@ -458,6 +526,7 @@ function configurarFormularios() {
   document.getElementById('btnNuevaZona').addEventListener('click', function () { abrirModalZona(null); });
   document.getElementById('btnGuardarZona').addEventListener('click', guardarZonaForm);
   document.getElementById('btnNuevaPersona').addEventListener('click', function () { abrirModalPersona(null); });
+  document.getElementById('btnNuevoUsuario').addEventListener('click', function () { abrirModalPersona(null); });
   document.getElementById('btnGuardarPersona').addEventListener('click', guardarPersonaForm);
   document.getElementById('btnNuevoMaterial').addEventListener('click', function () { abrirModalMaterial(null); });
   document.getElementById('btnGuardarMaterial').addEventListener('click', guardarMaterialForm);
@@ -571,8 +640,23 @@ function pintarVerificacion(lista) {
     return '<div class="card">' +
       '<div class="card-header"><div class="card-title">' + e.idEntrega + '<div class="muted">' + escaparHtml(e.personaNombre) + ' · ' + escaparHtml(e.zonaNombre) + '</div></div>' + badgeHtml(e.estado) + '</div>' +
       '<div class="table-wrap"><table><thead><tr><th>Material</th><th>Ent.</th><th>Inst.</th><th>Pend.</th><th></th></tr></thead><tbody>' + filasMaterial + '</tbody></table></div>' +
+      '<div style="margin-top:10px;text-align:right;"><button class="btn btn-secondary btn-sm" onclick="verFotosEntrega(\'' + e.idEntrega + '\')">🖼 Ver evidencias</button></div>' +
       '</div>';
   }).join('');
+}
+
+/** Muestra en un modal las fotos/videos de una entrega (usado desde Verificación POP). */
+function verFotosEntrega(idEntrega) {
+  mostrarCargando('Cargando evidencias...');
+  google.script.run.withSuccessHandler(function (evid) {
+    var galeria = renderGaleria(evid, false) ||
+      '<div class="empty-state" style="grid-column:1/-1;">Todavía no hay fotos ni videos para esta entrega.</div>';
+    document.getElementById('modalMediaBody').innerHTML = '<div class="gallery-grid">' + galeria + '</div>';
+    var titulo = document.querySelector('#modalMedia .modal-title');
+    if (titulo) titulo.textContent = 'Evidencias · ' + idEntrega;
+    ocultarCargando();
+    abrirModal('modalMedia');
+  }).withFailureHandler(manejarError).listarEvidenciasPorEntrega(idEntrega);
 }
 
 function abrirVerificacion(idEntrega, idDetalle, materialNombre) {
@@ -582,7 +666,7 @@ function abrirVerificacion(idEntrega, idDetalle, materialNombre) {
   document.getElementById('verificarMaterialLabel').textContent = 'Material: ' + materialNombre + ' (Entrega ' + idEntrega + ')';
   document.getElementById('verificarCantidad').value = '';
   document.getElementById('verificarObservaciones').value = '';
-  document.getElementById('verificarRegistradoPor').value = '';
+  document.getElementById('verificarRegistradoPor').value = SESION ? SESION.nombre : '';
   document.getElementById('verificarPreview').innerHTML = '';
   STATE.archivosEvidenciaPendientes = [];
   abrirModal('modalVerificar');
@@ -742,9 +826,20 @@ function abrirModalPersona(p) {
   document.getElementById('personaEstado').value = p ? p.ESTADO : 'Activo';
   document.getElementById('personaObservaciones').value = p ? p.OBSERVACIONES : '';
   document.getElementById('personaCodigoAcceso').value = p ? (p.CODIGO_ACCESO || '') : '';
+  document.getElementById('personaRol').value = p ? (p.ROL || 'Encargado') : 'Encargado';
+  var permisos = (p && p.PERMISOS) ? p.PERMISOS.split(',').map(function (s) { return s.trim(); }).filter(Boolean) : [];
+  pintarPermisosChecks(permisos);
   abrirModal('modalPersona');
 }
+function pintarPermisosChecks(seleccionados) {
+  document.getElementById('permisosChecks').innerHTML = ORDEN_VISTAS.map(function (v) {
+    var checked = seleccionados.indexOf(v) > -1 ? 'checked' : '';
+    return '<label><input type="checkbox" value="' + v + '" ' + checked + '>' + VISTAS_INFO[v] + '</label>';
+  }).join('');
+}
 function guardarPersonaForm() {
+  var permisosSel = Array.prototype.slice.call(document.querySelectorAll('#permisosChecks input:checked'))
+    .map(function (c) { return c.value; });
   var persona = {
     ID: document.getElementById('personaId').value || undefined,
     NOMBRE: document.getElementById('personaNombre').value,
@@ -755,12 +850,47 @@ function guardarPersonaForm() {
     CARGO: document.getElementById('personaCargo').value,
     ESTADO: document.getElementById('personaEstado').value,
     OBSERVACIONES: document.getElementById('personaObservaciones').value,
-    CODIGO_ACCESO: document.getElementById('personaCodigoAcceso').value.trim()
+    CODIGO_ACCESO: document.getElementById('personaCodigoAcceso').value.trim(),
+    ROL: document.getElementById('personaRol').value,
+    PERMISOS: permisosSel.join(',')
   };
-  mostrarCargando('Guardando persona...');
+  mostrarCargando('Guardando usuario...');
   google.script.run.withSuccessHandler(function () {
-    ocultarCargando(); cerrarModal('modalPersona'); toast('Persona guardada correctamente.', 'success'); cargarPersonas();
+    ocultarCargando(); cerrarModal('modalPersona'); toast('Usuario guardado correctamente.', 'success');
+    cargarPersonas();
+    if (document.getElementById('view-configuracion').classList.contains('active')) cargarUsuarios();
   }).withFailureHandler(manejarError).guardarPersona(persona, '');
+}
+
+/* ============================================================
+   USUARIOS Y ACCESOS (Configuración)
+   ============================================================ */
+function cargarUsuarios() {
+  mostrarCargando('Cargando usuarios...');
+  google.script.run.withSuccessHandler(function (lista) {
+    STATE.catalogos.personas = lista.filter(function (p) { return p.ESTADO !== 'Inactivo'; });
+    document.getElementById('tbodyUsuarios').innerHTML = lista.map(function (p) {
+      var secciones = (p.ROL === 'Administrador')
+        ? 'Todas'
+        : (p.PERMISOS ? p.PERMISOS.split(',').filter(Boolean).length + ' secciones' : '—');
+      var codigo = p.CODIGO_ACCESO ? escaparHtml(p.CODIGO_ACCESO) : '<span style="color:var(--text-faint);">Sin código</span>';
+      return '<tr><td>' + escaparHtml(p.NOMBRE) + '</td><td>' + escaparHtml(p.ROL || 'Encargado') + '</td><td>' + codigo + '</td>' +
+        '<td>' + escaparHtml(nombreZona(p.ZONA_ID) || '—') + '</td><td>' + secciones + '</td><td>' + escaparHtml(p.ESTADO) + '</td>' +
+        '<td class="row-actions">' +
+        '<button class="icon-btn" title="Editar" onclick=\'abrirModalPersona(' + JSON.stringify(p) + ')\'>✎</button>' +
+        '<button class="icon-btn" title="Eliminar" onclick="eliminarUsuario(\'' + p.ID + '\',' + JSON.stringify(p.NOMBRE) + ')">🗑</button>' +
+        '</td></tr>';
+    }).join('') || '<tr><td colspan="7"><div class="empty-state">No hay usuarios registrados.</div></td></tr>';
+    ocultarCargando();
+  }).withFailureHandler(manejarError).listarPersonas();
+}
+
+function eliminarUsuario(id, nombre) {
+  if (!window.confirm('¿Eliminar al usuario "' + nombre + '"? Esta acción no se puede deshacer.')) return;
+  mostrarCargando('Eliminando usuario...');
+  google.script.run.withSuccessHandler(function () {
+    ocultarCargando(); toast('Usuario eliminado.', 'success'); cargarUsuarios(); cargarPersonas();
+  }).withFailureHandler(manejarError).eliminarPersona(id);
 }
 
 /* ============================================================
