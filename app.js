@@ -232,7 +232,6 @@ function poblarSelectsCatalogos() {
 
   llenarSelect('entregaZona', zonas, 'ID', 'NOMBRE', 'Selecciona una zona');
   llenarSelect('entregaPersona', personas, 'ID', 'NOMBRE', 'Selecciona una persona');
-  llenarSelect('personaZona', zonas, 'ID', 'NOMBRE', 'Selecciona una zona');
 
   llenarSelect('filtroZonaEntregas', zonas, 'ID', 'NOMBRE', 'Todas las zonas', true);
   llenarSelect('filtroPersonaEntregas', personas, 'ID', 'NOMBRE', 'Todas las personas', true);
@@ -271,6 +270,11 @@ function nombreZona(id) {
 function nombrePersona(id) {
   var p = STATE.catalogos.personas.filter(function (x) { return x.ID === id; })[0];
   return p ? p.NOMBRE : id;
+}
+function nombresZonas(zonasStr) {
+  if (!zonasStr) return '—';
+  var nombres = String(zonasStr).split(',').map(function (id) { return nombreZona(id.trim()); }).filter(Boolean);
+  return nombres.length ? nombres.join(', ') : '—';
 }
 
 /* ============================================================
@@ -809,7 +813,7 @@ function cargarPersonas() {
     STATE.catalogos.personas = lista;
     poblarSelectsCatalogos();
     document.getElementById('tbodyPersonas').innerHTML = lista.map(function (p) {
-      return '<tr><td>' + p.ID + '</td><td>' + escaparHtml(p.NOMBRE) + '</td><td>' + escaparHtml(nombreZona(p.ZONA_ID)) + '</td><td>' + escaparHtml(p.CIUDAD) + '</td><td>' + escaparHtml(p.TELEFONO) + '</td><td>' + escaparHtml(p.CARGO) + '</td><td>' + escaparHtml(p.ESTADO) + '</td>' +
+      return '<tr><td>' + p.ID + '</td><td>' + escaparHtml(p.NOMBRE) + '</td><td>' + escaparHtml(nombresZonas(p.ZONAS || p.ZONA_ID)) + '</td><td>' + escaparHtml(p.CIUDAD) + '</td><td>' + escaparHtml(p.TELEFONO) + '</td><td>' + escaparHtml(p.CARGO) + '</td><td>' + escaparHtml(p.ESTADO) + '</td>' +
         '<td class="row-actions"><button class="icon-btn" onclick=\'abrirModalPersona(' + JSON.stringify(p) + ')\'>✎</button></td></tr>';
     }).join('') || '<tr><td colspan="8"><div class="empty-state">No hay personas registradas.</div></td></tr>';
     ocultarCargando();
@@ -820,7 +824,8 @@ function abrirModalPersona(p) {
   document.getElementById('personaNombre').value = p ? p.NOMBRE : '';
   document.getElementById('personaTelefono').value = p ? p.TELEFONO : '';
   document.getElementById('personaCorreo').value = p ? p.CORREO : '';
-  document.getElementById('personaZona').value = p ? p.ZONA_ID : '';
+  var zonasSel = p ? (p.ZONAS ? p.ZONAS.split(',') : (p.ZONA_ID ? [p.ZONA_ID] : [])).map(function (s) { return s.trim(); }).filter(Boolean) : [];
+  pintarZonasChecks(zonasSel);
   document.getElementById('personaCiudad').value = p ? p.CIUDAD : '';
   document.getElementById('personaCargo').value = p ? p.CARGO : '';
   document.getElementById('personaEstado').value = p ? p.ESTADO : 'Activo';
@@ -837,6 +842,13 @@ function pintarPermisosChecks(seleccionados) {
     return '<label><input type="checkbox" value="' + v + '" ' + checked + '>' + VISTAS_INFO[v] + '</label>';
   }).join('');
 }
+function pintarZonasChecks(seleccionadas) {
+  var zonas = STATE.catalogos.zonas || [];
+  document.getElementById('personaZonasChecks').innerHTML = zonas.map(function (z) {
+    var checked = seleccionadas.indexOf(z.ID) > -1 ? 'checked' : '';
+    return '<label><input type="checkbox" value="' + z.ID + '" ' + checked + '>' + escaparHtml(z.NOMBRE) + '</label>';
+  }).join('') || '<div style="color:var(--text-faint);font-size:12px;">No hay zonas registradas. Crea zonas primero.</div>';
+}
 function guardarPersonaForm() {
   var permisosSel = Array.prototype.slice.call(document.querySelectorAll('#permisosChecks input:checked'))
     .map(function (c) { return c.value; });
@@ -845,7 +857,7 @@ function guardarPersonaForm() {
     NOMBRE: document.getElementById('personaNombre').value,
     TELEFONO: document.getElementById('personaTelefono').value,
     CORREO: document.getElementById('personaCorreo').value,
-    ZONA_ID: document.getElementById('personaZona').value,
+    ZONAS: Array.prototype.slice.call(document.querySelectorAll('#personaZonasChecks input:checked')).map(function (c) { return c.value; }).join(','),
     CIUDAD: document.getElementById('personaCiudad').value,
     CARGO: document.getElementById('personaCargo').value,
     ESTADO: document.getElementById('personaEstado').value,
@@ -875,7 +887,7 @@ function cargarUsuarios() {
         : (p.PERMISOS ? p.PERMISOS.split(',').filter(Boolean).length + ' secciones' : '—');
       var codigo = p.CODIGO_ACCESO ? escaparHtml(p.CODIGO_ACCESO) : '<span style="color:var(--text-faint);">Sin código</span>';
       return '<tr><td>' + escaparHtml(p.NOMBRE) + '</td><td>' + escaparHtml(p.ROL || 'Encargado') + '</td><td>' + codigo + '</td>' +
-        '<td>' + escaparHtml(nombreZona(p.ZONA_ID) || '—') + '</td><td>' + secciones + '</td><td>' + escaparHtml(p.ESTADO) + '</td>' +
+        '<td>' + escaparHtml(nombresZonas(p.ZONAS || p.ZONA_ID)) + '</td><td>' + secciones + '</td><td>' + escaparHtml(p.ESTADO) + '</td>' +
         '<td class="row-actions">' +
         '<button class="icon-btn" title="Editar" onclick=\'abrirModalPersona(' + JSON.stringify(p) + ')\'>✎</button>' +
         '<button class="icon-btn" title="Eliminar" onclick="eliminarUsuario(\'' + p.ID + '\',' + JSON.stringify(p.NOMBRE) + ')">🗑</button>' +
@@ -972,9 +984,23 @@ function abrirMedia(ev) {
     campoInfo('Zona', ev.zonaNombre) + campoInfo('Persona', ev.personaNombre) +
     campoInfo('Material', ev.materialNombre) + campoInfo('Fecha', ev.fecha + ' ' + ev.hora) +
     campoInfo('Registrado por', ev.registradoPor) + campoInfo('Entrega', ev.idEntrega) +
+    campoInfo('Punto / dirección', ev.punto || ev.direccion || '—') +
+    '<div class="field"><label>Ubicación</label><div style="padding-top:4px;">' + campoUbicacionHtml(ev) + '</div></div>' +
     '</div>';
   document.getElementById('modalMediaBody').innerHTML = body;
   abrirModal('modalMedia');
+}
+
+/** Devuelve el enlace de ubicación (Maps) de una evidencia, o un guion si no hay. */
+function campoUbicacionHtml(ev) {
+  if (ev.ubicacionUrl) {
+    return '<a href="' + ev.ubicacionUrl + '" target="_blank" style="color:var(--choho-red);">📍 Ver en Google Maps</a>';
+  }
+  if (ev.latitud && ev.longitud) {
+    var u = 'https://www.google.com/maps?q=' + ev.latitud + ',' + ev.longitud;
+    return '<a href="' + u + '" target="_blank" style="color:var(--choho-red);">📍 Ver en Google Maps</a>';
+  }
+  return '<span style="color:var(--text-faint);">Sin ubicación GPS</span>';
 }
 
 /* ============================================================

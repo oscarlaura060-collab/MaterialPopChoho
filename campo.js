@@ -7,8 +7,18 @@ var LINEA_COUNT = 0;
 var ARCHIVOS_ENTREGA = [];
 var ARCHIVOS_VERIFICACION = [];
 var UBICACION_ENTREGA = null;
-var CONTEXTO_VERIFICACION = null; // {idEntrega, idDetalle, materialNombre}
+var CONTEXTO_VERIFICACION = null; // {idEntrega, idDetalle, materialNombre, zonaNombre}
 var PENDIENTES_CACHE = [];
+var ENTREGA_ZONA = null; // {id, nombre} zona elegida para la entrega en curso
+
+function zonasDeSesion() {
+  if (SESION && SESION.zonasIds && SESION.zonasIds.length) return SESION.zonasIds;
+  return (SESION && SESION.zonaId) ? [SESION.zonaId] : [];
+}
+function listaZonasSesion() {
+  if (SESION && SESION.zonas && SESION.zonas.length) return SESION.zonas;
+  return (SESION && SESION.zonaId) ? [{ id: SESION.zonaId, nombre: SESION.zonaNombre || '' }] : [];
+}
 
 document.addEventListener('DOMContentLoaded', function () {
   cargarPersonasLogin();
@@ -74,7 +84,11 @@ function hacerLogin() {
     SESION = sesion;
     ocultarCargando();
     document.getElementById('menuNombre').textContent = sesion.nombre;
-    document.getElementById('menuZona').textContent = sesion.zonaNombre ? ('Zona: ' + sesion.zonaNombre) : 'Sin zona asignada';
+    var zonas = listaZonasSesion();
+    var etiqueta = zonas.length === 0 ? 'Sin zona asignada'
+      : (zonas.length === 1 ? 'Zona: ' + zonas[0].nombre
+        : 'Zonas: ' + zonas.map(function (z) { return z.nombre; }).join(', '));
+    document.getElementById('menuZona').textContent = etiqueta;
     mostrarPantalla('pantallaMenu');
   }).withFailureHandler(manejarError).iniciarSesionPersona(personaId, codigo);
 }
@@ -93,6 +107,12 @@ function abrirPantallaEntrega() {
   UBICACION_ENTREGA = null;
   LINEA_COUNT = 0;
   agregarLineaMaterial();
+
+  var zonas = listaZonasSesion();
+  var sel = document.getElementById('ceZona');
+  sel.innerHTML = zonas.map(function (z) { return '<option value="' + z.id + '">' + escaparHtml(z.nombre) + '</option>'; }).join('');
+  document.getElementById('ceZonaWrap').style.display = zonas.length > 1 ? '' : 'none';
+
   mostrarPantalla('pantallaEntrega');
 }
 
@@ -131,10 +151,21 @@ function guardarEntregaCampo() {
   });
   if (materiales.length === 0) { toast('Agrega al menos un material.', 'warning'); return; }
 
+  var zonas = listaZonasSesion();
+  var zonaId = SESION.zonaId, zonaNombre = SESION.zonaNombre;
+  if (zonas.length > 1) {
+    zonaId = document.getElementById('ceZona').value;
+    var zsel = zonas.filter(function (z) { return z.id === zonaId; })[0];
+    zonaNombre = zsel ? zsel.nombre : '';
+  } else if (zonas.length === 1) {
+    zonaId = zonas[0].id; zonaNombre = zonas[0].nombre;
+  }
+  ENTREGA_ZONA = { id: zonaId, nombre: zonaNombre };
+
   var data = {
     fechaEntrega: '',
     personaId: SESION.id,
-    zonaId: SESION.zonaId,
+    zonaId: zonaId,
     ciudad: SESION.ciudad,
     punto: document.getElementById('ceEntregaPunto').value,
     direccion: document.getElementById('ceEntregaDireccion').value,
@@ -158,7 +189,8 @@ function subirFotosEntregaCampo(idEntrega, index) {
     return;
   }
   mostrarCargando('Subiendo foto ' + (index + 1) + ' de ' + ARCHIVOS_ENTREGA.length + '...');
-  var contexto = { idEntrega: idEntrega, idVerificacion: '', materialId: null, etapa: 'entrega', zonaNombre: SESION.zonaNombre, nombreQuienRegistra: SESION.nombre };
+  var zonaNombre = ENTREGA_ZONA ? ENTREGA_ZONA.nombre : SESION.zonaNombre;
+  var contexto = { idEntrega: idEntrega, idVerificacion: '', materialId: null, etapa: 'entrega', zonaNombre: zonaNombre, nombreQuienRegistra: SESION.nombre };
   google.script.run
     .withSuccessHandler(function () { subirFotosEntregaCampo(idEntrega, index + 1); })
     .withFailureHandler(function (err) { toast('Una foto no se pudo subir: ' + err.message, 'error'); subirFotosEntregaCampo(idEntrega, index + 1); })
@@ -171,7 +203,8 @@ function subirFotosEntregaCampo(idEntrega, index) {
 function abrirPantallaVerificacionLista() {
   mostrarCargando('Cargando pendientes...');
   google.script.run.withSuccessHandler(function (lista) {
-    PENDIENTES_CACHE = lista.filter(function (e) { return e.zonaId === SESION.zonaId; });
+    var zonas = zonasDeSesion();
+    PENDIENTES_CACHE = lista.filter(function (e) { return zonas.indexOf(e.zonaId) > -1; });
     pintarPendientes();
     ocultarCargando();
     mostrarPantalla('pantallaVerificacionLista');
@@ -187,14 +220,14 @@ function pintarPendientes() {
   cont.innerHTML = PENDIENTES_CACHE.map(function (e) {
     var filas = e.materiales.filter(function (m) { return m.pendiente > 0; }).map(function (m) {
       return '<div class="rowline"><span>' + escaparHtml(m.materialNombre) + ' (' + m.instalado + '/' + m.entregado + ')</span>' +
-        '<button class="btn btn-secondary btn-sm" onclick=\'abrirFormVerificacion("' + e.idEntrega + '","' + m.idDetalle + '",' + JSON.stringify(m.materialNombre) + ')\'>Verificar</button></div>';
+        '<button class="btn btn-secondary btn-sm" onclick=\'abrirFormVerificacion("' + e.idEntrega + '","' + m.idDetalle + '",' + JSON.stringify(m.materialNombre) + ',' + JSON.stringify(e.zonaNombre || '') + ')\'>Verificar</button></div>';
     }).join('');
     return '<div class="card pending-card"><strong>' + e.idEntrega + '</strong> · ' + escaparHtml(e.punto || e.ciudad) + filas + '</div>';
   }).join('');
 }
 
-function abrirFormVerificacion(idEntrega, idDetalle, materialNombre) {
-  CONTEXTO_VERIFICACION = { idEntrega: idEntrega, idDetalle: idDetalle, materialNombre: materialNombre };
+function abrirFormVerificacion(idEntrega, idDetalle, materialNombre, zonaNombre) {
+  CONTEXTO_VERIFICACION = { idEntrega: idEntrega, idDetalle: idDetalle, materialNombre: materialNombre, zonaNombre: zonaNombre || '' };
   document.getElementById('cvMaterialTitulo').textContent = materialNombre + ' · ' + idEntrega;
   document.getElementById('cvCantidad').value = '';
   document.getElementById('cvObservaciones').value = '';
@@ -227,7 +260,7 @@ function subirFotosVerificacionCampo(idVerificacion, index) {
     return;
   }
   mostrarCargando('Subiendo evidencia ' + (index + 1) + ' de ' + ARCHIVOS_VERIFICACION.length + '...');
-  var contexto = { idEntrega: CONTEXTO_VERIFICACION.idEntrega, idVerificacion: idVerificacion, materialId: null, etapa: 'verificacion', zonaNombre: SESION.zonaNombre, nombreQuienRegistra: SESION.nombre };
+  var contexto = { idEntrega: CONTEXTO_VERIFICACION.idEntrega, idVerificacion: idVerificacion, materialId: null, etapa: 'verificacion', zonaNombre: CONTEXTO_VERIFICACION.zonaNombre || SESION.zonaNombre, nombreQuienRegistra: SESION.nombre };
   google.script.run
     .withSuccessHandler(function () { subirFotosVerificacionCampo(idVerificacion, index + 1); })
     .withFailureHandler(function (err) { toast('Una evidencia no se pudo subir: ' + err.message, 'error'); subirFotosVerificacionCampo(idVerificacion, index + 1); })
@@ -239,21 +272,38 @@ function subirFotosVerificacionCampo(idVerificacion, index) {
    ============================================================ */
 function abrirPantallaEvidencias() {
   mostrarCargando('Cargando evidencias...');
-  google.script.run.withSuccessHandler(function (lista) {
+  google.script.run.withSuccessHandler(function (todas) {
+    var zonas = zonasDeSesion();
+    var lista = todas.filter(function (ev) { return zonas.indexOf(ev.zonaId) > -1; });
     document.getElementById('ceGaleria').innerHTML = lista.map(function (ev) {
       var media = ev.tipo === 'imagen' ? '<img src="' + ev.url + '" loading="lazy">' : '<div class="video-thumb">🎬</div>';
       return '<div class="gallery-item" onclick=\'abrirMediaCampo(' + JSON.stringify(ev) + ')\'>' + media +
-        '<div class="gallery-meta"><strong>' + escaparHtml(ev.materialNombre || '') + '</strong>' + escaparHtml(ev.fecha) + ' ' + escaparHtml(ev.hora) + '</div></div>';
+        '<div class="gallery-meta"><strong>' + escaparHtml(ev.materialNombre || '') + '</strong>' + escaparHtml(ev.zonaNombre || '') + '<br>' + escaparHtml(ev.fecha) + ' ' + escaparHtml(ev.hora) + '</div></div>';
     }).join('') || '<div class="empty-state" style="grid-column:1/-1;">Todavía no hay evidencias.</div>';
     ocultarCargando();
     mostrarPantalla('pantallaEvidencias');
-  }).withFailureHandler(manejarError).listarEvidencias({ zonaId: SESION.zonaId });
+  }).withFailureHandler(manejarError).listarEvidencias({});
 }
 
 function abrirMediaCampo(ev) {
   var body = ev.tipo === 'imagen'
     ? '<img src="' + ev.url + '" style="width:100%;border-radius:10px;">'
     : '<video src="' + ev.url + '" controls style="width:100%;border-radius:10px;"></video>';
+  var ubic;
+  if (ev.ubicacionUrl) {
+    ubic = '<a href="' + ev.ubicacionUrl + '" target="_blank" style="color:var(--choho-red);">📍 Ver en Google Maps</a>';
+  } else if (ev.latitud && ev.longitud) {
+    ubic = '<a href="https://www.google.com/maps?q=' + ev.latitud + ',' + ev.longitud + '" target="_blank" style="color:var(--choho-red);">📍 Ver en Google Maps</a>';
+  } else {
+    ubic = '<span style="color:var(--text-faint);">Sin ubicación GPS</span>';
+  }
+  body += '<div style="margin-top:14px;font-size:13px;line-height:1.7;">' +
+    '<div><strong>Material:</strong> ' + escaparHtml(ev.materialNombre || '—') + '</div>' +
+    '<div><strong>Zona:</strong> ' + escaparHtml(ev.zonaNombre || '—') + '</div>' +
+    '<div><strong>Punto / dirección:</strong> ' + escaparHtml(ev.punto || ev.direccion || '—') + '</div>' +
+    '<div><strong>Fecha:</strong> ' + escaparHtml(ev.fecha) + ' ' + escaparHtml(ev.hora) + '</div>' +
+    '<div><strong>Ubicación:</strong> ' + ubic + '</div>' +
+    '</div>';
   document.getElementById('modalMediaBody').innerHTML = body;
   document.getElementById('modalMedia').classList.add('active');
 }

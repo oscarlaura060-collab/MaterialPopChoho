@@ -400,7 +400,10 @@
           <div class="field full"><label>Nombre completo</label><input id="personaNombre"></div>
           <div class="field"><label>Teléfono</label><input id="personaTelefono"></div>
           <div class="field"><label>Correo</label><input id="personaCorreo"></div>
-          <div class="field"><label>Zona asignada</label><select id="personaZona"></select></div>
+          <div class="field full"><label>Zonas asignadas</label>
+            <div id="personaZonasChecks" class="permisos-grid"></div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:6px;">Puedes asignar <strong>varias zonas</strong>. En el modo de campo la persona podrá elegir entre ellas al registrar.</div>
+          </div>
           <div class="field"><label>Ciudad</label><input id="personaCiudad"></div>
           <div class="field"><label>Cargo</label><input id="personaCargo"></div>
           <div class="field"><label>Estado</label><select id="personaEstado"><option>Activo</option><option>Inactivo</option></select></div>
