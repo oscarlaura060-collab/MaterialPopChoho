@@ -44,13 +44,9 @@
     <section class="campo-screen active" id="pantallaLogin">
       <div class="card">
         <div class="card-header"><div class="card-title">Ingresa con tu código</div></div>
-        <div class="field" style="margin-bottom:12px;">
-          <label>Tu nombre</label>
-          <select id="loginPersona"><option value="">Cargando personas...</option></select>
-        </div>
         <div class="field" style="margin-bottom:16px;">
           <label>Código de acceso</label>
-          <input type="password" id="loginCodigo" placeholder="Ej: CHOHO2026">
+          <input type="password" id="loginCodigo" placeholder="Ingresa tu código" autofocus>
         </div>
         <button class="btn btn-primary btn-block" id="btnLogin">Ingresar</button>
         <div style="font-size:12px;color:var(--text-faint);margin-top:12px;">¿No tienes código? Pide a un administrador que te lo asigne desde "Personas encargadas".</div>
@@ -102,7 +98,7 @@
 
         <h4 style="margin:6px 0 10px;">Fotos del material <span style="font-weight:400;color:var(--text-faint);font-size:12px;">(opcional)</span></h4>
         <label class="drop-camera" for="ceArchivo">📷 Tomar foto o seleccionar fotos</label>
-        <input type="file" id="ceArchivo" accept="image/*,video/*" capture="environment" multiple style="display:none;">
+        <input type="file" id="ceArchivo" accept="image/*,video/*" multiple style="display:none;">
         <div class="preview-thumbs" id="cePreview"></div>
 
         <button class="btn btn-primary btn-block" id="ceBtnGuardar" style="margin-top:18px;">Guardar entrega</button>
@@ -126,7 +122,7 @@
 
         <h4 style="margin:6px 0 10px;">Evidencia fotográfica / video</h4>
         <label class="drop-camera" for="cvArchivo">📷 Tomar foto o seleccionar fotos/videos</label>
-        <input type="file" id="cvArchivo" accept="image/*,video/*" capture="environment" multiple style="display:none;">
+        <input type="file" id="cvArchivo" accept="image/*,video/*" multiple style="display:none;">
         <div class="preview-thumbs" id="cvPreview"></div>
 
         <button class="btn btn-primary btn-block" id="cvBtnGuardar" style="margin-top:18px;">Guardar verificación</button>

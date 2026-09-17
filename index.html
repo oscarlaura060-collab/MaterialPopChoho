@@ -17,13 +17,9 @@
       <div class="login-logo"><svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><g fill="#e11d2e"><circle cx="32" cy="12" r="6.5"/><circle cx="52" cy="32" r="6.5"/><circle cx="32" cy="52" r="6.5"/><circle cx="12" cy="32" r="6.5"/><path d="M46 10 54 18 46 26 38 18Z"/><path d="M46 38 54 46 46 54 38 46Z"/><path d="M18 38 26 46 18 54 10 46Z"/><path d="M18 10 26 18 18 26 10 18Z"/></g></svg></div>
       <div class="login-title">CHOHO POP</div>
       <div class="login-sub">Control de Material POP</div>
-      <div class="field" style="margin-bottom:12px;text-align:left;">
-        <label>Tu nombre</label>
-        <select id="adminLoginPersona"><option value="">Cargando personas...</option></select>
-      </div>
       <div class="field" style="margin-bottom:16px;text-align:left;">
         <label>Código de acceso</label>
-        <input type="password" id="adminLoginCodigo" placeholder="Tu código de acceso">
+        <input type="password" id="adminLoginCodigo" placeholder="Ingresa tu código" autofocus>
       </div>
       <button class="btn btn-primary btn-block" id="btnAdminLogin">Ingresar</button>
       <div class="login-hint">¿No tienes código? Pídelo a un administrador.</div>
@@ -323,7 +319,7 @@
 
         <h4 style="margin:18px 0 10px;">Fotos del material entregado <span style="font-weight:400;color:var(--text-faint);font-size:12px;">(opcional, quedan visibles en la app)</span></h4>
         <label class="drop-camera" for="entregaArchivo">📷 Tomar foto o seleccionar fotos del material</label>
-        <input type="file" id="entregaArchivo" accept="image/*,video/*" capture="environment" multiple style="display:none;">
+        <input type="file" id="entregaArchivo" accept="image/*,video/*" multiple style="display:none;">
         <div class="preview-thumbs" id="entregaPreview"></div>
       </div>
       <div class="modal-footer">
@@ -359,7 +355,7 @@
         </div>
         <h4 style="margin:16px 0 8px;">Evidencia fotográfica / video</h4>
         <label class="drop-camera" for="verificarArchivo">📷 Tomar foto o seleccionar fotos/videos</label>
-        <input type="file" id="verificarArchivo" accept="image/*,video/*" capture="environment" multiple style="display:none;">
+        <input type="file" id="verificarArchivo" accept="image/*,video/*" multiple style="display:none;">
         <div class="preview-thumbs" id="verificarPreview"></div>
       </div>
       <div class="modal-footer">

@@ -53,27 +53,19 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 function configurarLogin() {
-  google.script.run.withSuccessHandler(function (personas) {
-    var sel = document.getElementById('adminLoginPersona');
-    sel.innerHTML = '<option value="">Selecciona tu nombre...</option>' +
-      personas.map(function (p) { return '<option value="' + p.id + '">' + escaparHtml(p.nombre) + '</option>'; }).join('');
-  }).withFailureHandler(manejarError).listarPersonasParaLogin();
-
   document.getElementById('btnAdminLogin').addEventListener('click', hacerLoginAdmin);
   document.getElementById('adminLoginCodigo').addEventListener('keydown', function (e) { if (e.key === 'Enter') hacerLoginAdmin(); });
   document.getElementById('btnLogout').addEventListener('click', cerrarSesion);
 }
 
 function hacerLoginAdmin() {
-  var personaId = document.getElementById('adminLoginPersona').value;
   var codigo = document.getElementById('adminLoginCodigo').value;
-  if (!personaId) { toast('Selecciona tu nombre.', 'warning'); return; }
   if (!codigo) { toast('Ingresa tu código de acceso.', 'warning'); return; }
   mostrarCargando('Verificando...');
   google.script.run.withSuccessHandler(function (sesion) {
     SESION = sesion;
     iniciarApp();
-  }).withFailureHandler(manejarError).iniciarSesionPersona(personaId, codigo);
+  }).withFailureHandler(manejarError).iniciarSesionPorCodigo(codigo);
 }
 
 function iniciarApp() {

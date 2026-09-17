@@ -21,18 +21,9 @@ function listaZonasSesion() {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-  cargarPersonasLogin();
   cargarMateriales();
   configurarEventos();
 });
-
-function cargarPersonasLogin() {
-  google.script.run.withSuccessHandler(function (personas) {
-    var sel = document.getElementById('loginPersona');
-    sel.innerHTML = '<option value="">Selecciona tu nombre...</option>' +
-      personas.map(function (p) { return '<option value="' + p.id + '">' + escaparHtml(p.nombre) + '</option>'; }).join('');
-  }).withFailureHandler(manejarError).listarPersonasParaLogin();
-}
 
 function cargarMateriales() {
   google.script.run.withSuccessHandler(function (materiales) {
@@ -42,6 +33,7 @@ function cargarMateriales() {
 
 function configurarEventos() {
   document.getElementById('btnLogin').addEventListener('click', hacerLogin);
+  document.getElementById('loginCodigo').addEventListener('keydown', function (e) { if (e.key === 'Enter') hacerLogin(); });
   document.getElementById('btnLogout').addEventListener('click', function () { SESION = null; mostrarPantalla('pantallaLogin'); });
 
   document.getElementById('btnIrEntrega').addEventListener('click', abrirPantallaEntrega);
@@ -74,9 +66,7 @@ function mostrarPantalla(id) {
    LOGIN
    ============================================================ */
 function hacerLogin() {
-  var personaId = document.getElementById('loginPersona').value;
   var codigo = document.getElementById('loginCodigo').value;
-  if (!personaId) { toast('Selecciona tu nombre.', 'warning'); return; }
   if (!codigo) { toast('Ingresa tu código de acceso.', 'warning'); return; }
 
   mostrarCargando('Verificando...');
@@ -90,7 +80,7 @@ function hacerLogin() {
         : 'Zonas: ' + zonas.map(function (z) { return z.nombre; }).join(', '));
     document.getElementById('menuZona').textContent = etiqueta;
     mostrarPantalla('pantallaMenu');
-  }).withFailureHandler(manejarError).iniciarSesionPersona(personaId, codigo);
+  }).withFailureHandler(manejarError).iniciarSesionPorCodigo(codigo);
 }
 
 /* ============================================================
