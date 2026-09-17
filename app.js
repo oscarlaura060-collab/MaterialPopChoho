@@ -52,20 +52,88 @@ document.addEventListener('DOMContentLoaded', function () {
   configurarLogin();
 });
 
+var LOGIN_MAX_INTENTOS = 3;
+var LOGIN_BLOQUEO_MS = 30000; // 30 s de bloqueo tras 3 fallos
+var loginTimer = null;
+
+function loginEstado() {
+  try {
+    return {
+      intentos: parseInt(localStorage.getItem('choho_intentos') || '0', 10) || 0,
+      lock: parseInt(localStorage.getItem('choho_lock') || '0', 10) || 0
+    };
+  } catch (e) { return { intentos: 0, lock: 0 }; }
+}
+function setLoginEstado(intentos, lock) {
+  try { localStorage.setItem('choho_intentos', intentos); localStorage.setItem('choho_lock', lock); } catch (e) {}
+}
+function segundosBloqueado() {
+  var st = loginEstado();
+  if (st.lock && Date.now() < st.lock) return Math.ceil((st.lock - Date.now()) / 1000);
+  return 0;
+}
+function mostrarLoginError(msg) {
+  var el = document.getElementById('adminLoginError');
+  if (!el) return;
+  if (!msg) { el.style.display = 'none'; el.textContent = ''; return; }
+  el.textContent = msg; el.style.display = 'block';
+}
+function cuentaRegresivaLogin() {
+  var btn = document.getElementById('btnAdminLogin');
+  var inp = document.getElementById('adminLoginCodigo');
+  if (loginTimer) { clearTimeout(loginTimer); loginTimer = null; }
+  (function tick() {
+    var r = segundosBloqueado();
+    if (r > 0) {
+      btn.disabled = true; inp.disabled = true;
+      mostrarLoginError('Demasiados intentos fallidos. Espera ' + r + ' segundos para reintentar.');
+      loginTimer = setTimeout(tick, 1000);
+    } else {
+      btn.disabled = false; inp.disabled = false;
+      setLoginEstado(0, 0);
+      mostrarLoginError('');
+      inp.focus();
+    }
+  })();
+}
+
 function configurarLogin() {
   document.getElementById('btnAdminLogin').addEventListener('click', hacerLoginAdmin);
   document.getElementById('adminLoginCodigo').addEventListener('keydown', function (e) { if (e.key === 'Enter') hacerLoginAdmin(); });
   document.getElementById('btnLogout').addEventListener('click', cerrarSesion);
+  document.getElementById('adminTogglePwd').addEventListener('click', function () {
+    var inp = document.getElementById('adminLoginCodigo');
+    if (inp.type === 'password') { inp.type = 'text'; this.textContent = '🙈'; }
+    else { inp.type = 'password'; this.textContent = '👁'; }
+  });
+  if (segundosBloqueado() > 0) cuentaRegresivaLogin();
 }
 
 function hacerLoginAdmin() {
+  if (segundosBloqueado() > 0) { cuentaRegresivaLogin(); return; }
   var codigo = document.getElementById('adminLoginCodigo').value;
-  if (!codigo) { toast('Ingresa tu código de acceso.', 'warning'); return; }
+  if (!codigo) { mostrarLoginError('Ingresa tu código de acceso.'); return; }
+  mostrarLoginError('');
   mostrarCargando('Verificando...');
   google.script.run.withSuccessHandler(function (sesion) {
+    ocultarCargando();
+    setLoginEstado(0, 0);
     SESION = sesion;
     iniciarApp();
-  }).withFailureHandler(manejarError).iniciarSesionPorCodigo(codigo);
+  }).withFailureHandler(function (err) {
+    ocultarCargando();
+    var intentos = loginEstado().intentos + 1;
+    var inp = document.getElementById('adminLoginCodigo');
+    if (intentos >= LOGIN_MAX_INTENTOS) {
+      setLoginEstado(0, Date.now() + LOGIN_BLOQUEO_MS);
+      cuentaRegresivaLogin();
+    } else {
+      setLoginEstado(intentos, 0);
+      var base = (err && err.message) ? err.message : 'Código de acceso incorrecto';
+      mostrarLoginError(base + '. Intento ' + intentos + ' de ' + LOGIN_MAX_INTENTOS + '.');
+      inp.value = ''; inp.focus();
+    }
+  }).iniciarSesionPorCodigo(codigo);
 }
 
 function iniciarApp() {

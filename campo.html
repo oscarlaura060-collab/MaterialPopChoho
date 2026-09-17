@@ -44,10 +44,14 @@
     <section class="campo-screen active" id="pantallaLogin">
       <div class="card">
         <div class="card-header"><div class="card-title">Ingresa con tu código</div></div>
-        <div class="field" style="margin-bottom:16px;">
+        <div class="field" style="margin-bottom:8px;">
           <label>Código de acceso</label>
-          <input type="password" id="loginCodigo" placeholder="Ingresa tu código" autofocus>
+          <div class="pwd-wrap">
+            <input type="password" id="loginCodigo" placeholder="Ingresa tu código" autofocus>
+            <button type="button" class="pwd-toggle" id="campoTogglePwd" aria-label="Mostrar u ocultar código">👁</button>
+          </div>
         </div>
+        <div id="campoLoginError" class="login-error" style="display:none;"></div>
         <button class="btn btn-primary btn-block" id="btnLogin">Ingresar</button>
         <div style="font-size:12px;color:var(--text-faint);margin-top:12px;">¿No tienes código? Pide a un administrador que te lo asigne desde "Personas encargadas".</div>
       </div>

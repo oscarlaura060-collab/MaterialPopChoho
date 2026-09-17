@@ -308,3 +308,18 @@ textarea{resize:vertical;min-height:70px;}
   background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-sm);
   padding:8px 10px;cursor:pointer;font-size:13px;text-transform:none;letter-spacing:0;}
 .permisos-grid input{width:auto;}
+
+/* ---------- Login: ver contraseña y error ---------- */
+.pwd-wrap{position:relative;}
+.pwd-wrap input{padding-right:42px;}
+.pwd-toggle{
+  position:absolute;right:6px;top:50%;transform:translateY(-50%);
+  background:transparent;border:none;font-size:16px;line-height:1;
+  padding:6px;color:var(--text-muted);border-radius:8px;
+}
+.pwd-toggle:hover{color:var(--text);}
+.login-error{
+  background:rgba(225,29,46,.12);border:1px solid rgba(225,29,46,.35);
+  color:#fca5a5;font-size:12.5px;padding:9px 12px;border-radius:var(--radius-sm);
+  margin-bottom:12px;text-align:left;
+}

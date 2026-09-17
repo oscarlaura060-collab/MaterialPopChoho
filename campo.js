@@ -20,6 +20,52 @@ function listaZonasSesion() {
   return (SESION && SESION.zonaId) ? [{ id: SESION.zonaId, nombre: SESION.zonaNombre || '' }] : [];
 }
 
+/* ---------- Login: intentos, bloqueo y error ---------- */
+var CAMPO_MAX_INTENTOS = 3;
+var CAMPO_BLOQUEO_MS = 30000;
+var campoLoginTimer = null;
+
+function campoLoginEstado() {
+  try {
+    return {
+      intentos: parseInt(localStorage.getItem('choho_campo_intentos') || '0', 10) || 0,
+      lock: parseInt(localStorage.getItem('choho_campo_lock') || '0', 10) || 0
+    };
+  } catch (e) { return { intentos: 0, lock: 0 }; }
+}
+function setCampoLoginEstado(intentos, lock) {
+  try { localStorage.setItem('choho_campo_intentos', intentos); localStorage.setItem('choho_campo_lock', lock); } catch (e) {}
+}
+function campoSegBloqueado() {
+  var st = campoLoginEstado();
+  if (st.lock && Date.now() < st.lock) return Math.ceil((st.lock - Date.now()) / 1000);
+  return 0;
+}
+function mostrarCampoError(msg) {
+  var el = document.getElementById('campoLoginError');
+  if (!el) return;
+  if (!msg) { el.style.display = 'none'; el.textContent = ''; return; }
+  el.textContent = msg; el.style.display = 'block';
+}
+function campoCuentaRegresiva() {
+  var btn = document.getElementById('btnLogin');
+  var inp = document.getElementById('loginCodigo');
+  if (campoLoginTimer) { clearTimeout(campoLoginTimer); campoLoginTimer = null; }
+  (function tick() {
+    var r = campoSegBloqueado();
+    if (r > 0) {
+      btn.disabled = true; inp.disabled = true;
+      mostrarCampoError('Demasiados intentos fallidos. Espera ' + r + ' segundos para reintentar.');
+      campoLoginTimer = setTimeout(tick, 1000);
+    } else {
+      btn.disabled = false; inp.disabled = false;
+      setCampoLoginEstado(0, 0);
+      mostrarCampoError('');
+      inp.focus();
+    }
+  })();
+}
+
 document.addEventListener('DOMContentLoaded', function () {
   cargarMateriales();
   configurarEventos();
@@ -34,6 +80,12 @@ function cargarMateriales() {
 function configurarEventos() {
   document.getElementById('btnLogin').addEventListener('click', hacerLogin);
   document.getElementById('loginCodigo').addEventListener('keydown', function (e) { if (e.key === 'Enter') hacerLogin(); });
+  document.getElementById('campoTogglePwd').addEventListener('click', function () {
+    var inp = document.getElementById('loginCodigo');
+    if (inp.type === 'password') { inp.type = 'text'; this.textContent = '🙈'; }
+    else { inp.type = 'password'; this.textContent = '👁'; }
+  });
+  if (campoSegBloqueado() > 0) campoCuentaRegresiva();
   document.getElementById('btnLogout').addEventListener('click', function () { SESION = null; mostrarPantalla('pantallaLogin'); });
 
   document.getElementById('btnIrEntrega').addEventListener('click', abrirPantallaEntrega);
@@ -66,11 +118,13 @@ function mostrarPantalla(id) {
    LOGIN
    ============================================================ */
 function hacerLogin() {
+  if (campoSegBloqueado() > 0) { campoCuentaRegresiva(); return; }
   var codigo = document.getElementById('loginCodigo').value;
-  if (!codigo) { toast('Ingresa tu código de acceso.', 'warning'); return; }
-
+  if (!codigo) { mostrarCampoError('Ingresa tu código de acceso.'); return; }
+  mostrarCampoError('');
   mostrarCargando('Verificando...');
   google.script.run.withSuccessHandler(function (sesion) {
+    setCampoLoginEstado(0, 0);
     SESION = sesion;
     ocultarCargando();
     document.getElementById('menuNombre').textContent = sesion.nombre;
@@ -79,8 +133,22 @@ function hacerLogin() {
       : (zonas.length === 1 ? 'Zona: ' + zonas[0].nombre
         : 'Zonas: ' + zonas.map(function (z) { return z.nombre; }).join(', '));
     document.getElementById('menuZona').textContent = etiqueta;
+    document.getElementById('loginCodigo').value = '';
     mostrarPantalla('pantallaMenu');
-  }).withFailureHandler(manejarError).iniciarSesionPorCodigo(codigo);
+  }).withFailureHandler(function (err) {
+    ocultarCargando();
+    var intentos = campoLoginEstado().intentos + 1;
+    var inp = document.getElementById('loginCodigo');
+    if (intentos >= CAMPO_MAX_INTENTOS) {
+      setCampoLoginEstado(0, Date.now() + CAMPO_BLOQUEO_MS);
+      campoCuentaRegresiva();
+    } else {
+      setCampoLoginEstado(intentos, 0);
+      var base = (err && err.message) ? err.message : 'Código de acceso incorrecto';
+      mostrarCampoError(base + '. Intento ' + intentos + ' de ' + CAMPO_MAX_INTENTOS + '.');
+      inp.value = ''; inp.focus();
+    }
+  }).iniciarSesionPorCodigo(codigo);
 }
 
 /* ============================================================
