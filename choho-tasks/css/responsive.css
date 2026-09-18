@@ -1,0 +1,84 @@
+/* ==========================================================================
+   CHOHO TASKS · responsive.css  (adaptación a tablet y móvil)
+   ========================================================================== */
+
+/* --------------------------- Tablet grande ----------------------------- */
+@media (max-width: 1200px) {
+  .kpi-row { grid-template-columns: repeat(3, 1fr); }
+  .today-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ------------------------------ Tablet --------------------------------- */
+@media (max-width: 992px) {
+  .dash-grid { grid-template-columns: 1fr; }
+  .report-charts { grid-template-columns: 1fr; }
+  .kanban-board { grid-template-columns: repeat(2, 1fr); }
+  .search-box { width: 200px; }
+}
+
+/* --------------------- Sidebar deslizable (móvil) ---------------------- */
+@media (max-width: 860px) {
+  .sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0; height: 100vh;
+    transform: translateX(-100%); transition: transform .25s ease; box-shadow: var(--shadow-lg);
+  }
+  .app-shell.sidebar-open .sidebar { transform: translateX(0); }
+  .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(15,23,42,.45); z-index: 35; }
+  .app-shell.sidebar-open .sidebar-overlay { display: block; }
+  .sidebar-close { display: inline-flex; }
+  .menu-btn { display: inline-flex; }
+
+  .quick-new { display: none; }
+  .search-box { width: 180px; }
+}
+
+/* ------------------------------- Móvil --------------------------------- */
+@media (max-width: 640px) {
+  .view-container { padding: 16px; }
+  .topbar { padding: 0 14px; gap: 8px; }
+  .header-title { font-size: 17px; }
+
+  .auth-screen { grid-template-columns: 1fr; }
+  .auth-visual { display: none; }
+  .auth-brand-mobile { display: block; }
+  .auth-panel { padding: 24px 16px; }
+  .auth-card { padding: 28px 22px; box-shadow: var(--shadow); }
+
+  .kpi-row { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .kpi-value { font-size: 22px; }
+  .kpi-icon { width: 38px; height: 38px; font-size: 18px; }
+  .today-grid { grid-template-columns: 1fr; }
+  .kanban-board { grid-template-columns: 1fr; }
+
+  .search-box { flex: 1; width: auto; min-width: 0; }
+  .topbar-right { gap: 4px; }
+  .share-btn, #share-btn, #theme-toggle { display: none; }
+  #notif-bell { display: inline-flex; }
+  .user-chip .uc-name { display: none; }
+
+  .form-grid { grid-template-columns: 1fr; }
+  .modal-overlay { padding: 12px; }
+  .cal-cell { min-height: 66px; }
+  .cal-chip { font-size: 9px; }
+  .view-toolbar { gap: 10px; }
+  .mini-search { width: 100%; }
+  .seg-btn { padding: 8px 10px; font-size: 12px; }
+
+  .report-doc { padding: 18px; }
+  .detail-footer { flex-direction: column-reverse; }
+  .detail-footer .btn { width: 100%; }
+}
+
+/* --------------------------- Móvil pequeño ----------------------------- */
+@media (max-width: 400px) {
+  .kpi-row { grid-template-columns: 1fr; }
+  .pc-stats { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ------------------------------ Impresión ------------------------------ */
+@media print {
+  .sidebar, .topbar, .no-print { display: none !important; }
+  .view-container { padding: 0; }
+  body { background: #fff; }
+  .card, .report-doc { box-shadow: none; border: 1px solid #ddd; }
+}

@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Seguimiento de gestión · CHOHO TASKS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    body{background:var(--bg);}
+    .share-wrap{max-width:1000px;margin:0 auto;padding:24px 20px 64px;}
+    .share-ribbon{background:var(--primary);color:#fff;text-align:center;padding:8px;font-weight:600;font-size:13px;letter-spacing:.3px;}
+    .share-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin:24px 0 8px;}
+    .share-brand{font-weight:800;color:var(--primary);letter-spacing:1px;font-size:20px;}
+    .share-title{font-size:26px;margin:6px 0 2px;}
+    .share-empty{max-width:520px;margin:80px auto;text-align:center;color:var(--text-soft);}
+  </style>
+</head>
+<body>
+  <div class="share-ribbon">👁️ Vista de solo lectura · el contenido no puede modificarse</div>
+  <div id="share-root" class="share-wrap"></div>
+
+  <script src="utils/helpers.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/metrics.js"></script>
+  <script src="js/charts.js"></script>
+  <script>
+  (function () {
+    'use strict';
+    var root = document.getElementById('share-root');
+    var snap = Storage.getShareSnapshot();
+
+    if (!snap) {
+      root.innerHTML = '<div class="share-empty"><h2>No hay seguimiento compartido</h2>' +
+        '<p>Abre CHOHO TASKS, pulsa <b>Compartir seguimiento</b> y vuelve a abrir esta página.</p>' +
+        '<p><a class="link" href="index.html">Ir a la aplicación</a></p></div>';
+      return;
+    }
+
+    var s = snap.summary;
+    var statusRows = function (arr) {
+      return arr.map(function (t) {
+        return '<tr><td>' + H.escapeHtml(t.name) + '</td><td>' + H.escapeHtml(t.project) +
+          '</td><td><span class="badge badge-status status-' + t.status + '">' + H.escapeHtml(t.statusLabel) +
+          '</span></td><td>' + t.progress + '%</td><td>' + (t.dueDate ? H.formatDate(t.dueDate) : '—') + '</td></tr>';
+      }).join('');
+    };
+
+    root.innerHTML =
+      '<div class="share-head"><div>' +
+        '<div class="share-brand">CHOHO TASKS</div>' +
+        '<h1 class="share-title">Seguimiento de gestión</h1>' +
+        '<p class="muted">' + H.escapeHtml(snap.user.name) + (snap.user.role ? ' · ' + H.escapeHtml(snap.user.role) : '') + '</p>' +
+        '<p class="muted">Periodo: ' + H.escapeHtml(snap.periodLabel) + '</p>' +
+      '</div>' +
+      '<div class="kpi-card k-comp" style="cursor:default"><div class="kpi-icon">🎯</div>' +
+        '<div class="kpi-body"><div class="kpi-value">' + s.compliance + '%</div>' +
+        '<div class="kpi-label">Cumplimiento</div></div></div>' +
+      '</div>' +
+      '<div class="kpi-row">' +
+        kpi('📋', s.total, 'Actividades') + kpi('✅', s.completadas, 'Completadas') +
+        kpi('🔄', s.en_progreso, 'En progreso') + kpi('🕒', s.pendientes + s.en_espera, 'Pendientes') +
+        kpi('⚠️', s.vencidas, 'Vencidas') +
+      '</div>' +
+      '<div class="dash-grid">' +
+        card('Estado de tareas', 'sh-status') + card('Tareas por proyecto', 'sh-proj') +
+      '</div>' +
+      '<div class="card" style="margin-top:18px"><div class="card-head"><h3>Actividades</h3></div>' +
+        '<div class="table-wrap"><table class="task-table"><thead><tr><th>Actividad</th><th>Proyecto</th>' +
+        '<th>Estado</th><th>Avance</th><th>Fecha límite</th></tr></thead><tbody>' +
+        statusRows(snap.tasks) + '</tbody></table></div></div>' +
+      '<p class="muted small" style="margin-top:20px;text-align:center">Generado el ' +
+        H.formatDateTime(snap.generatedAt) + ' · CHOHO TASKS</p>';
+
+    Charts.donut('sh-status', snap.status);
+    Charts.horizontalBar('sh-proj', snap.projects);
+
+    function kpi(icon, value, label) {
+      return '<div class="kpi-card" style="cursor:default"><div class="kpi-icon">' + icon + '</div>' +
+        '<div class="kpi-body"><div class="kpi-value">' + value + '</div>' +
+        '<div class="kpi-label">' + label + '</div></div></div>';
+    }
+    function card(title, id) {
+      return '<div class="card chart-card"><div class="card-head"><h3>' + title + '</h3></div>' +
+        '<div class="chart-holder"><canvas id="' + id + '"></canvas></div></div>';
+    }
+  })();
+  </script>
+</body>
+</html>

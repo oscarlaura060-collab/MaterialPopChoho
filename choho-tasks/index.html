@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="CHOHO TASKS · Gestión inteligente de actividades y seguimiento">
+  <title>CHOHO TASKS · Centro de control</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+
+  <!-- ============================ LOGIN ============================ -->
+  <div id="auth-screen" class="auth-screen">
+    <div class="auth-visual">
+      <div class="auth-visual-inner">
+        <div class="auth-logo">CHOHO <span>TASKS</span></div>
+        <h1>Tu centro de control personal de gestión.</h1>
+        <p>Organiza actividades, mide tu cumplimiento y muestra resultados con indicadores en tiempo real.</p>
+        <ul class="auth-points">
+          <li>✅ Seguimiento de tareas con historial y propósito</li>
+          <li>📊 KPIs y gráficos de productividad</li>
+          <li>📈 Informes profesionales exportables</li>
+          <li>🔗 Comparte tu seguimiento en modo solo lectura</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="auth-panel">
+      <div class="auth-card">
+        <div class="auth-brand-mobile">CHOHO <span>TASKS</span></div>
+        <h2>Iniciar sesión</h2>
+        <p class="auth-subtitle">Gestión inteligente de actividades y seguimiento</p>
+
+        <form id="login-form" novalidate>
+          <label class="field">
+            <span class="field-label">Correo electrónico</span>
+            <input type="email" id="login-email" autocomplete="username" required placeholder="tucorreo@choho.app">
+          </label>
+          <label class="field">
+            <span class="field-label">Contraseña</span>
+            <span class="pass-wrap">
+              <input type="password" id="login-password" autocomplete="current-password" required placeholder="••••••••">
+              <button type="button" class="pass-toggle" id="login-toggle-pass" aria-label="Mostrar contraseña">👁️</button>
+            </span>
+          </label>
+
+          <div class="auth-row">
+            <label class="checkbox"><input type="checkbox" id="login-remember"> <span>Recordarme</span></label>
+            <a href="#" id="login-forgot" class="link">¿Olvidaste tu contraseña?</a>
+          </div>
+
+          <p id="login-error" class="form-error hidden"></p>
+          <button type="submit" class="btn btn-primary btn-block">Iniciar sesión</button>
+        </form>
+
+        <p class="auth-demo">
+          Demo · <button type="button" id="login-demo" class="link">usar credenciales de demostración</button>
+        </p>
+        <p class="auth-note">Autenticación local de demostración — no es seguridad real para uso público.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================ APP ============================= -->
+  <div id="app-shell" class="app-shell hidden">
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-head">
+        <div class="brand">CHOHO <span>TASKS</span></div>
+        <button class="icon-btn sidebar-close" id="sidebar-toggle" aria-label="Cerrar menú">✕</button>
+      </div>
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-route="dashboard"><span class="nav-ico">🏠</span> Dashboard</button>
+        <button class="nav-item" data-route="tareas"><span class="nav-ico">📋</span> Mis tareas</button>
+        <button class="nav-item" data-route="kanban"><span class="nav-ico">📌</span> Kanban</button>
+        <button class="nav-item" data-route="calendario"><span class="nav-ico">📅</span> Calendario</button>
+        <button class="nav-item" data-route="proyectos"><span class="nav-ico">📁</span> Proyectos</button>
+        <button class="nav-item" data-route="kpis"><span class="nav-ico">📊</span> KPIs</button>
+        <button class="nav-item" data-route="informes"><span class="nav-ico">📈</span> Informes</button>
+        <button class="nav-item" data-route="notificaciones"><span class="nav-ico">🔔</span> Notificaciones</button>
+        <button class="nav-item" data-route="perfil"><span class="nav-ico">👤</span> Mi perfil</button>
+        <button class="nav-item" data-route="config"><span class="nav-ico">⚙️</span> Configuración</button>
+      </nav>
+      <div class="sidebar-foot">
+        <button class="btn btn-ghost btn-block" id="logout-btn">🚪 Cerrar sesión</button>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <div class="main">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="icon-btn menu-btn" id="menu-btn" aria-label="Abrir menú">☰</button>
+          <h1 class="header-title" id="header-title">Dashboard</h1>
+        </div>
+        <div class="topbar-right">
+          <div class="search-box">
+            <span class="search-ico">🔍</span>
+            <input type="search" id="global-search" placeholder="Buscar tareas, proyectos, clientes...">
+            <div id="search-results" class="search-results hidden"></div>
+          </div>
+          <button class="btn btn-primary btn-sm quick-new" id="quick-new">+ Nueva tarea</button>
+          <button class="icon-btn" id="share-btn" title="Compartir seguimiento">🔗</button>
+          <button class="icon-btn notif-bell" id="notif-bell" title="Notificaciones">🔔<span id="notif-badge" class="notif-badge hidden">0</span></button>
+          <button class="icon-btn" id="theme-toggle" title="Cambiar tema">🌙</button>
+          <div class="user-chip" id="user-chip"></div>
+        </div>
+      </header>
+
+      <main id="view-container" class="view-container"></main>
+    </div>
+  </div>
+
+  <!-- ==================== Librerías externas ==================== -->
+  <!-- Chart.js (opcional). Si no hay conexión, la app usa un respaldo SVG. -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- ==================== Aplicación ==================== -->
+  <script src="utils/helpers.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/seed.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/metrics.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/tasks.js"></script>
+  <script src="js/calendar.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/projects.js"></script>
+  <script src="js/kpis.js"></script>
+  <script src="js/reports.js"></script>
+  <script src="js/notifications.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
