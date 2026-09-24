@@ -47,21 +47,26 @@ export function Galeria({ anexos, eventoId }: { anexos: Anexo[]; eventoId: strin
           if (!TIPOS_OK.test(f.type)) throw new Error(`"${f.name}" no es una imagen, video o PDF.`);
 
           const ruta = `${eventoId}/${Date.now()}-${nombreSeguro(f.name)}`;
-          const { error: eSub } = await supabase.storage
+          const { data: subido, error: eSub } = await supabase.storage
             .from(BUCKET_ANEXOS)
             .upload(ruta, f, { contentType: f.type, upsert: false });
           if (eSub) throw eSub;
 
+          // Se guarda la ruta REAL donde quedó el archivo, que no siempre es
+          // la solicitada: la versión de escritorio lo organiza por código de
+          // evento dentro de la carpeta del usuario.
+          const rutaFinal = subido?.path ?? ruta;
+
           const { error: eIns } = await supabase.from("anexos").insert({
             evento_id: eventoId,
             nombre: f.name,
-            storage_path: ruta,
+            storage_path: rutaFinal,
             mime_type: f.type,
             tamano_bytes: f.size,
           });
           if (eIns) {
             // No dejar el archivo huérfano si falla el registro
-            await supabase.storage.from(BUCKET_ANEXOS).remove([ruta]);
+            await supabase.storage.from(BUCKET_ANEXOS).remove([rutaFinal]);
             throw eIns;
           }
         }

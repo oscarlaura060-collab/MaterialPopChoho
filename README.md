@@ -14,9 +14,15 @@ Originalmente construido en Google Apps Script + Google Sheets + Google Drive,
 | `google.script.run`        | `/api/rpc` (funciones serverless) + shim |
 
 > **Nota:** este repositorio contiene además **CHOHO · Eventos**, la aplicación
-> que reemplaza el libro `EVENTOS REALIZADOS.xlsx`. Vive en la carpeta
-> [`eventos/`](eventos/) y se despliega como un **proyecto de Vercel aparte**
-> (Root Directory = `eventos`). Ver [`eventos/README.md`](eventos/README.md).
+> que reemplaza el libro `EVENTOS REALIZADOS.xlsx`. Hay dos versiones:
+>
+> - [`escritorio/`](escritorio/) — **la que se usa.** Un solo archivo
+>   `CHOHO-Eventos.html` que se abre con doble clic y guarda todo en una
+>   carpeta del computador. Sin servidor ni cuentas. Ver
+>   [`escritorio/README.md`](escritorio/README.md).
+> - [`eventos/`](eventos/) — la misma aplicación como sitio web sobre Supabase,
+>   por si en el futuro se quiere un enlace en vivo para los jefes. No está
+>   desplegada. Ver [`eventos/README.md`](eventos/README.md).
 
 ## Arquitectura
 

@@ -1,0 +1,34 @@
+CHOHO · EVENTOS — CÓMO EMPEZAR
+==============================
+
+1) Guarda el archivo CHOHO-Eventos.html donde quieras (por ejemplo, el Escritorio).
+
+2) Haz doble clic. Se abre en Chrome o Edge.
+   Si se abre en otro navegador: clic derecho > Abrir con > Chrome.
+
+3) Pulsa "Elegir carpeta" y escoge dónde guardar la información.
+   Sugerencia: crea una carpeta llamada "CHOHO Eventos" en Documentos.
+   El navegador pedirá confirmar: acepta.
+
+4) Para cargar lo que ya tienes:
+   Configuración > Importar Excel > selecciona EVENTOS REALIZADOS.xlsx
+
+5) Para enviarle algo a los jefes:
+   Compartir > elige los filtros > "Guardar en mi carpeta"
+   Luego adjunta ese archivo en WhatsApp o correo.
+   Ellos lo abren en el celular: no necesitan instalar nada.
+
+
+NOTAS
+-----
+· Cada vez que abras la aplicación, el navegador pedirá permiso sobre la
+  carpeta con un clic. Es normal, es una seguridad de Chrome.
+
+· Toda tu información está en la carpeta que elegiste, en el archivo
+  eventos.json y en la carpeta anexos/. Puedes copiarla a una USB o
+  ponerla dentro de OneDrive para tener respaldo automático.
+
+· En Configuración puedes pulsar "Hacer una copia ahora" cuando quieras.
+
+· El informe que envías es una foto del momento: no se actualiza solo.
+  Cuando registres eventos nuevos, genera y envía otro.

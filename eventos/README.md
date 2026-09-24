@@ -12,6 +12,11 @@ y fotografías.
 Formulario web  →  Supabase (PostgreSQL + Storage)  →  Dashboard  →  Jefes
 ```
 
+> **¿Buscas la versión que se usa hoy?** Está en [`../escritorio/`](../escritorio/):
+> un solo archivo que se abre con doble clic y guarda todo en una carpeta del
+> computador, sin servidor ni cuentas. Esta versión web queda disponible por si
+> más adelante se quiere un enlace en vivo.
+
 ---
 
 ## Cómo se convirtió el Excel
