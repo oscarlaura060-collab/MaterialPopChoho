@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import {
   Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis,
@@ -8,7 +9,7 @@ import { Encabezado } from "@/components/shell";
 import { Columna, Tabla, TablaDatos } from "@/components/tabla";
 import { Aviso, Grafico, Modal, Select, Vacio } from "@/components/ui";
 import { NEUTRO, SERIES, TIPOS_LISTA } from "@/lib/constants";
-import { num, pct } from "@/lib/format";
+import { fechaCorta, horaCorta, num, pct } from "@/lib/format";
 import { useApp } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
 import type { Persona } from "@/lib/types";
@@ -16,7 +17,9 @@ import { exportarHoja } from "@/lib/exportar";
 
 export default function PersonalPage() {
   const { datos, esAdmin, recargar, cargando, catalogo } = useApp();
+  const router = useRouter();
   const [editar, setEditar] = useState<Partial<Persona> | null>(null);
+  const [ficha, setFicha] = useState<Persona | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
 
@@ -35,6 +38,18 @@ export default function PersonalPage() {
       })),
     [personas]
   );
+
+  /** Eventos en los que participó la persona abierta, del más reciente al más antiguo. */
+  const eventosDeLaFicha = useMemo(() => {
+    if (!ficha) return [];
+    return datos.participacion
+      .filter((p) => p.persona_nombre === ficha.nombre)
+      .map((p) => ({
+        ...p,
+        evento: datos.eventos.find((e) => e.id === p.evento_id),
+      }))
+      .sort((a, b) => (b.evento_fecha ?? "").localeCompare(a.evento_fecha ?? ""));
+  }, [ficha, datos.participacion, datos.eventos]);
 
   const columnas: Columna<Persona>[] = [
     { clave: "codigo", titulo: "ID", orden: (p) => p.codigo ?? "",
@@ -63,6 +78,20 @@ export default function PersonalPage() {
       celda: (p) => <span className="font-semibold">{pct(p.pct_asistencia)}</span> },
     { clave: "horas", titulo: "Horas", alinear: "der", soloEscritorio: true,
       orden: (p) => p.horas_totales, celda: (p) => num(p.horas_totales) },
+    { clave: "abrir", titulo: "",
+      celda: (p) => (
+        <div className="flex items-center justify-end gap-1">
+          {esAdmin && (
+            <button
+              className="rounded-md px-2 py-1 text-xs font-semibold text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
+              onClick={(e) => { e.stopPropagation(); setEditar(p); }}
+            >
+              Editar
+            </button>
+          )}
+          <span className="text-neutral-300" aria-hidden>›</span>
+        </div>
+      ) },
   ];
 
   async function guardar(e: React.FormEvent) {
@@ -172,11 +201,135 @@ export default function PersonalPage() {
           columnas={columnas}
           filas={personas}
           claveFila={(p) => p.id}
-          onFila={esAdmin ? (p) => setEditar(p) : undefined}
+          onFila={(p) => setFicha(p)}
           vacio={<Vacio icono="👥" titulo="Sin personal registrado"
                         detalle="Agrega las personas que participan en los eventos." />}
         />
       </div>
+
+      {/* Ficha de la persona: en qué eventos estuvo */}
+      <Modal abierto={!!ficha} onCerrar={() => setFicha(null)}
+             titulo={ficha?.nombre ?? ""} ancho="max-w-4xl">
+        {ficha && (
+          <div className="space-y-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-sm text-neutral-600">
+                  {ficha.cargo_area ?? "Sin cargo registrado"}
+                  {ficha.codigo ? <> · <span className="font-mono text-xs">{ficha.codigo}</span></> : null}
+                </p>
+                {!ficha.activo && (
+                  <span className="badge mt-1 bg-neutral-100 text-neutral-600 ring-neutral-400/25">
+                    Inactiva
+                  </span>
+                )}
+              </div>
+              {esAdmin && (
+                <button className="btn-secundario px-2.5 py-1.5 text-xs"
+                        onClick={() => { setFicha(null); setEditar(ficha); }}>
+                  Editar datos
+                </button>
+              )}
+            </div>
+
+            <dl className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+              {[
+                ["Eventos", num(ficha.eventos_asignados)],
+                ["Confirmados", num(ficha.confirmados)],
+                ["Asistió", num(ficha.asistidos)],
+                ["No asistió", num(ficha.no_asistio)],
+                ["Horas", num(ficha.horas_totales)],
+              ].map(([k, v]) => (
+                <div key={k} className="rounded-lg bg-neutral-50 p-3 ring-1 ring-neutral-200">
+                  <dt className="titulo-seccion">{k}</dt>
+                  <dd className="mt-1 text-xl font-black tabular-nums">{v}</dd>
+                </div>
+              ))}
+            </dl>
+
+            {ficha.pct_asistencia !== null && (
+              <div className="flex items-center gap-3 rounded-lg bg-neutral-50 p-3 ring-1 ring-neutral-200">
+                <span className="titulo-seccion shrink-0">Asistencia</span>
+                <span className="h-2 flex-1 overflow-hidden rounded-full" style={{ background: NEUTRO }} aria-hidden>
+                  <span className="block h-full rounded-full"
+                        style={{ width: `${(ficha.pct_asistencia ?? 0) * 100}%`, background: SERIES.s4 }} />
+                </span>
+                <span className="shrink-0 text-sm font-bold tabular-nums">{pct(ficha.pct_asistencia)}</span>
+              </div>
+            )}
+
+            <div>
+              <h3 className="mb-2 text-sm font-bold text-neutral-900">
+                Eventos en los que participó
+              </h3>
+              {eventosDeLaFicha.length === 0 ? (
+                <Vacio icono="📅" titulo="Todavía no ha participado en ningún evento"
+                       detalle="Las participaciones se registran al crear o editar un evento." />
+              ) : (
+                <div className="overflow-x-auto scroll-fino rounded-lg ring-1 ring-neutral-200">
+                  <table className="min-w-full divide-y divide-neutral-200">
+                    <thead className="bg-neutral-50">
+                      <tr>
+                        <th className="th">Evento</th>
+                        <th className="th hidden sm:table-cell">Ciudad</th>
+                        <th className="th">Rol</th>
+                        <th className="th">Confirmado</th>
+                        <th className="th">Asistió</th>
+                        <th className="th hidden text-right lg:table-cell">Ingreso</th>
+                        <th className="th hidden text-right lg:table-cell">Salida</th>
+                        <th className="th text-right">Horas</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-neutral-100 bg-white">
+                      {eventosDeLaFicha.map((p) => (
+                        <tr key={p.id}
+                            className="cursor-pointer transition-colors hover:bg-neutral-50"
+                            onClick={() => { setFicha(null); router.push(`/eventos/${p.evento_codigo}`); }}>
+                          <td className="td">
+                            <p className="font-semibold text-neutral-900">{p.evento_nombre}</p>
+                            <p className="text-xs text-neutral-500">
+                              <span className="font-mono">{p.evento_codigo}</span> · {fechaCorta(p.evento_fecha)}
+                            </p>
+                          </td>
+                          <td className="td hidden text-neutral-600 sm:table-cell">
+                            {p.evento?.ciudad ?? "—"}
+                          </td>
+                          <td className="td text-neutral-600">{p.rol_funcion ?? "—"}</td>
+                          <td className="td">{p.confirmado}</td>
+                          <td className="td">
+                            <span className={
+                              p.asistio === "SÍ" ? "font-semibold text-emerald-700"
+                              : p.asistio === "NO" ? "font-semibold text-choho-red"
+                              : "text-neutral-500"}>{p.asistio}</span>
+                          </td>
+                          <td className="td hidden text-right tabular-nums lg:table-cell">
+                            {horaCorta(p.hora_ingreso)}
+                          </td>
+                          <td className="td hidden text-right tabular-nums lg:table-cell">
+                            {horaCorta(p.hora_salida)}
+                          </td>
+                          <td className="td text-right font-semibold tabular-nums">{p.horas ?? "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot className="border-t-2 border-neutral-200 bg-neutral-50">
+                      <tr>
+                        <td className="td font-bold" colSpan={7}>
+                          TOTAL · {eventosDeLaFicha.length} evento{eventosDeLaFicha.length === 1 ? "" : "s"}
+                        </td>
+                        <td className="td text-right font-bold tabular-nums">{num(ficha.horas_totales)}</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              )}
+              <p className="mt-2 text-xs text-neutral-500">
+                Toca cualquier evento para abrir su ficha completa.
+              </p>
+            </div>
+          </div>
+        )}
+      </Modal>
 
       <Modal abierto={!!editar} onCerrar={() => { setEditar(null); setError(null); }}
              titulo={editar?.id ? "Editar persona" : "Nueva persona"}>

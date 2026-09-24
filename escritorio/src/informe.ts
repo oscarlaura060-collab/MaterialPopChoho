@@ -83,6 +83,20 @@ export async function generarInforme(
     <div class="k"><p class="ke">${esc(etiqueta)}</p><p class="kv">${esc(valor)}</p>
     ${apoyo ? `<p class="ka">${esc(apoyo)}</p>` : ""}</div>`;
 
+  /** Consolidado de material: cuánto se usó de cada uno en todos los eventos */
+  const matPorTipo = (() => {
+    const m = new Map<string, { material: string; llevada: number; utilizada: number; sobrante: number; gasto: number }>();
+    for (const x of mat) {
+      const f = m.get(x.material) ?? { material: x.material, llevada: 0, utilizada: 0, sobrante: 0, gasto: 0 };
+      f.llevada += x.cantidad_llevada;
+      f.utilizada += x.cantidad_utilizada;
+      f.sobrante += x.cantidad_sobrante;
+      f.gasto += x.gasto_material;
+      m.set(x.material, f);
+    }
+    return [...m.values()].sort((a, b) => b.utilizada - a.utilizada);
+  })();
+
   const agrupar = (campo: "ciudad" | "tipo_evento" | "responsable") => {
     const m = new Map<string, number>();
     for (const e of eventos) m.set((e[campo] as string) ?? "SIN DEFINIR",
@@ -203,6 +217,7 @@ h2{margin:0;font-size:21px;letter-spacing:-.01em}
 h3{margin:0 0 12px;font-size:15px}
 h4{margin:22px 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:#d0342c}
 .c{background:#fff;border:1px solid #e3e2e0;border-radius:12px;padding:18px;margin-bottom:16px}
+.c .tw{margin:0}
 .ks{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
 .k{background:#fff;border:1px solid #e3e2e0;border-radius:12px;padding:14px}
 .ke{margin:0;font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:#8a8783;font-weight:700}
@@ -276,6 +291,20 @@ dialog img{max-width:96vw;max-height:96vh;border-radius:8px;display:block}
     ${tarjeta("Gastos adicionales", money(gastoAdic))}
     ${tarjeta("Gasto total", money(gastoPop + gastoAdic))}
   </div>
+
+  ${matPorTipo.length ? `<section class="c"><h3>Total por material</h3>
+    <div class="tw"><table class="t"><thead><tr><th>Material</th>
+    <th class="n">Llevado</th><th class="n">Utilizado</th><th class="n">Sobrante</th>
+    <th class="n">% Util.</th><th class="n">Gasto</th></tr></thead><tbody>
+    ${matPorTipo.map((m) => `<tr><td>${esc(m.material)}</td>
+      <td class="n">${num(m.llevada)}</td><td class="n"><b>${num(m.utilizada)}</b></td>
+      <td class="n">${num(m.sobrante)}</td>
+      <td class="n">${pct(m.llevada ? m.utilizada / m.llevada : null, 1)}</td>
+      <td class="n">${money(m.gasto)}</td></tr>`).join("")}
+    </tbody><tfoot><tr><th>TOTAL</th><th class="n">${num(popLlevado)}</th>
+      <th class="n">${num(popUtil)}</th><th class="n">${num(popLlevado - popUtil)}</th>
+      <th class="n">${pct(popLlevado ? popUtil / popLlevado : null, 1)}</th>
+      <th class="n">${money(gastoPop)}</th></tr></tfoot></table></div></section>` : ""}
 
   ${eventos.length ? barras("Eventos por ciudad", agrupar("ciudad"),
       Math.max(...agrupar("ciudad").map((x) => x[1]))) : ""}

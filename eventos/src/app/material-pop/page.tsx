@@ -8,13 +8,13 @@ import { Encabezado } from "@/components/shell";
 import { Columna, Tabla } from "@/components/tabla";
 import { Badge, Vacio } from "@/components/ui";
 import { NEUTRO, SERIES } from "@/lib/constants";
-import { fechaCorta, money, num, pct } from "@/lib/format";
+import { NUM1, fechaCorta, money, num, pct } from "@/lib/format";
 import { useApp } from "@/lib/store";
 import type { MaterialPop } from "@/lib/types";
 import { exportarHoja } from "@/lib/exportar";
 
 export default function MaterialPage() {
-  const { datos, idsFiltrados, cargando } = useApp();
+  const { datos, idsFiltrados, eventosFiltrados, cargando } = useApp();
   const router = useRouter();
 
   const filas = useMemo(
@@ -23,6 +23,35 @@ export default function MaterialPage() {
       .sort((a, b) => b.evento_fecha.localeCompare(a.evento_fecha)),
     [datos.material, idsFiltrados]
   );
+
+  /** Consolidado por material: cuánto se llevó y se usó de cada uno en total. */
+  const porMaterial = useMemo(() => {
+    const m = new Map<string, {
+      material: string; llevada: number; utilizada: number; sobrante: number;
+      gasto: number; costo: number; eventos: Set<string>;
+    }>();
+    for (const x of filas) {
+      const f = m.get(x.material) ?? {
+        material: x.material, llevada: 0, utilizada: 0, sobrante: 0,
+        gasto: 0, costo: x.costo_unitario, eventos: new Set<string>(),
+      };
+      f.llevada += x.cantidad_llevada;
+      f.utilizada += x.cantidad_utilizada;
+      f.sobrante += x.cantidad_sobrante;
+      f.gasto += x.gasto_material;
+      f.costo = x.costo_unitario || f.costo;
+      f.eventos.add(x.evento_id);
+      m.set(x.material, f);
+    }
+    return [...m.values()]
+      .map((f) => ({
+        ...f,
+        nEventos: f.eventos.size,
+        pct: f.llevada > 0 ? f.utilizada / f.llevada : null,
+        promedio: f.eventos.size > 0 ? f.utilizada / f.eventos.size : 0,
+      }))
+      .sort((a, b) => b.utilizada - a.utilizada);
+  }, [filas]);
 
   const tot = useMemo(() => {
     const s = (f: (m: MaterialPop) => number) => filas.reduce((a, m) => a + f(m), 0);
@@ -110,7 +139,97 @@ export default function MaterialPage() {
         </Fila>
       </div>
 
+      {porMaterial.length > 0 && (
+        <section className="card mb-5 overflow-hidden">
+          <header className="flex flex-wrap items-center justify-between gap-2 border-b border-neutral-200 px-4 py-3 sm:px-5">
+            <div>
+              <h2 className="text-sm font-bold text-neutral-900">Total por material</h2>
+              <p className="mt-0.5 text-xs text-neutral-500">
+                Consolidado de {porMaterial.length} material{porMaterial.length === 1 ? "" : "es"}
+                {" "}en {eventosFiltrados.length} evento{eventosFiltrados.length === 1 ? "" : "s"}
+              </p>
+            </div>
+            <button className="btn-secundario px-2.5 py-1.5 text-xs"
+              onClick={() => exportarHoja("RESUMEN MATERIAL POP",
+                ["MATERIAL POP", "EVENTOS", "CANTIDAD LLEVADA", "CANTIDAD UTILIZADA",
+                 "CANTIDAD SOBRANTE", "% UTILIZACIÓN", "PROMEDIO POR EVENTO",
+                 "COSTO UNITARIO", "GASTO MATERIAL"],
+                porMaterial.map((m) => [
+                  m.material, m.nEventos, m.llevada, m.utilizada, m.sobrante,
+                  m.pct, Math.round(m.promedio * 10) / 10, m.costo, m.gasto,
+                ]), { F: "0.0%", H: '"$"#,##0', I: '"$"#,##0' })}>
+              ⬇ Excel
+            </button>
+          </header>
+
+          <div className="overflow-x-auto scroll-fino">
+            <table className="min-w-full divide-y divide-neutral-200">
+              <thead className="bg-neutral-50">
+                <tr>
+                  <th className="th">Material</th>
+                  <th className="th text-right">Eventos</th>
+                  <th className="th text-right">Llevado</th>
+                  <th className="th text-right">Utilizado</th>
+                  <th className="th text-right">Sobrante</th>
+                  <th className="th text-right">% Utilización</th>
+                  <th className="th hidden text-right lg:table-cell">Promedio por evento</th>
+                  <th className="th hidden text-right lg:table-cell">Costo unit.</th>
+                  <th className="th text-right">Gasto</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-100">
+                {porMaterial.map((m) => (
+                  <tr key={m.material}>
+                    <td className="td font-semibold">{m.material}</td>
+                    <td className="td text-right tabular-nums text-neutral-500">{num(m.nEventos)}</td>
+                    <td className="td text-right tabular-nums">{num(m.llevada)}</td>
+                    <td className="td text-right text-base font-bold tabular-nums">{num(m.utilizada)}</td>
+                    <td className="td text-right tabular-nums">{num(m.sobrante)}</td>
+                    <td className="td text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <span className="hidden h-1.5 w-16 overflow-hidden rounded-full sm:block"
+                              style={{ background: NEUTRO }} aria-hidden>
+                          <span className="block h-full rounded-full"
+                                style={{ width: `${Math.min(100, (m.pct ?? 0) * 100)}%`, background: SERIES.s1 }} />
+                        </span>
+                        <span className="font-semibold tabular-nums">{pct(m.pct, 1)}</span>
+                      </div>
+                    </td>
+                    <td className="td hidden text-right tabular-nums text-neutral-600 lg:table-cell">
+                      {NUM1.format(m.promedio)}
+                    </td>
+                    <td className="td hidden text-right tabular-nums text-neutral-500 lg:table-cell">
+                      {money(m.costo)}
+                    </td>
+                    <td className="td text-right font-semibold tabular-nums">{money(m.gasto)}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot className="border-t-2 border-neutral-200 bg-neutral-50">
+                <tr>
+                  <td className="td font-bold">TOTAL</td>
+                  <td className="td text-right font-bold tabular-nums">{num(eventosFiltrados.length)}</td>
+                  <td className="td text-right font-bold tabular-nums">{num(tot.llevada)}</td>
+                  <td className="td text-right text-base font-bold tabular-nums">{num(tot.utilizada)}</td>
+                  <td className="td text-right font-bold tabular-nums">{num(tot.sobrante)}</td>
+                  <td className="td text-right font-bold tabular-nums">{pct(tot.util, 1)}</td>
+                  <td className="td hidden lg:table-cell" />
+                  <td className="td hidden lg:table-cell" />
+                  <td className="td text-right font-bold tabular-nums">{money(tot.gasto)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </section>
+      )}
+
       <div className="card overflow-hidden">
+        <header className="border-b border-neutral-200 px-4 py-3 sm:px-5">
+          <h2 className="text-sm font-bold text-neutral-900">Detalle por evento</h2>
+          <p className="mt-0.5 text-xs text-neutral-500">
+            Cada fila es un material en un evento. Toca una fila para abrir el evento.
+          </p>
+        </header>
         <Tabla
           columnas={columnas}
           filas={filas}
