@@ -13,6 +13,11 @@ Originalmente construido en Google Apps Script + Google Sheets + Google Drive,
 | HTML servido por Apps Script | Frontend estático en Vercel           |
 | `google.script.run`        | `/api/rpc` (funciones serverless) + shim |
 
+> **Nota:** este repositorio contiene además **CHOHO · Eventos**, la aplicación
+> que reemplaza el libro `EVENTOS REALIZADOS.xlsx`. Vive en la carpeta
+> [`eventos/`](eventos/) y se despliega como un **proyecto de Vercel aparte**
+> (Root Directory = `eventos`). Ver [`eventos/README.md`](eventos/README.md).
+
 ## Arquitectura
 
 ```
