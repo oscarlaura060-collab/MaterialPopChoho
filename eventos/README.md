@@ -42,7 +42,7 @@ el resultado es idéntico:
 | --- | --- |
 | `CANTIDAD UTILIZADA = LLEVADA − SOBRANTE` | columna generada en `material_pop` |
 | `% UTILIZACIÓN = UTILIZADA / LLEVADA` | columna generada |
-| `GASTO MATERIAL = LLEVADA × COSTO UNITARIO` | columna generada |
+| `GASTO MATERIAL = LLEVADA × COSTO UNITARIO` | **cambiado:** `UTILIZADA × COSTO UNITARIO` (columna generada); `valor_llevado` conserva el original |
 | `COSTO UNITARIO` por `INDEX/MATCH` en el catálogo | trigger `aplicar_costo_unitario` |
 | `GASTO POP = SUMIFS(MATERIAL POP)` | vista `v_eventos` |
 | `GASTOS ADICIONALES = SUMIFS(GASTOS)` | vista `v_eventos` |
@@ -53,6 +53,10 @@ el resultado es idéntico:
 
 **Importante:** en el Excel se captura la *cantidad sobrante* y la *utilizada*
 se deduce. La aplicación hace lo mismo: tú registras **llevada** y **sobrante**.
+
+El gasto, en cambio, ya no es el del Excel: cuenta solo el material
+**utilizado**, porque lo sobrante vuelve a bodega. El valor de lo movilizado
+queda en `valor_llevado` / `pop_valor_llevado`.
 
 ---
 

@@ -62,18 +62,20 @@ export async function exportarEventosExcel(eventos: EventoVista[], datos: Datos)
   encabezar(hEv, [
     "ID EVENTO", "EVENTO", "FECHA", "DÍA", "CIUDAD", "LUGAR / NEGOCIO", "DIRECCIÓN",
     "CLIENTE", "TIPO DE EVENTO", "RESPONSABLE", "ESTADO", "ASISTENTES ESPERADOS",
-    "ASISTENTES", "GASTO POP", "GASTOS ADICIONALES", "GASTO TOTAL", "OBSERVACIONES",
+    "ASISTENTES", "GASTO POP", "VALOR MATERIAL LLEVADO", "GASTOS ADICIONALES",
+    "GASTO TOTAL", "OBSERVACIONES",
   ]);
   for (const e of eventos) {
     hEv.addRow([
       e.codigo, e.nombre, fechaCorta(e.fecha), e.dia, e.ciudad, e.lugar_negocio,
       e.direccion, e.cliente, e.tipo_evento, e.responsable, e.estado,
       e.asistentes_esperados, e.asistentes,
-      e.gasto_pop, e.gastos_adicionales, e.gasto_total, e.observaciones,
+      e.gasto_pop, e.pop_valor_llevado, e.gastos_adicionales, e.gasto_total,
+      e.observaciones,
     ]);
   }
-  anchos(hEv, [11, 26, 12, 11, 14, 26, 24, 18, 24, 18, 14, 12, 12, 14, 16, 14, 30]);
-  ["N", "O", "P"].forEach((c) => { hEv.getColumn(c).numFmt = MONEDA; });
+  anchos(hEv, [11, 26, 12, 11, 14, 26, 24, 18, 24, 18, 14, 12, 12, 14, 18, 16, 14, 30]);
+  ["N", "O", "P", "Q"].forEach((c) => { hEv.getColumn(c).numFmt = MONEDA; });
 
   // --- MATERIAL POP ---
   const hMp = libro.addWorksheet("MATERIAL POP");

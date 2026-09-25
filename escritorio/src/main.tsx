@@ -9,6 +9,7 @@ import ListaEventos from "@/app/eventos/page";
 import FichaEvento from "@/app/eventos/[codigo]/page";
 import NuevoEvento from "@/app/eventos/nuevo/page";
 import EditarEvento from "@/app/eventos/[codigo]/editar/page";
+import Comparar from "@/app/comparar/page";
 import Personal from "@/app/personal/page";
 import MaterialPop from "@/app/material-pop/page";
 import Gastos from "@/app/gastos/page";
@@ -35,6 +36,7 @@ function Ruteador() {
     if (partes[2] === "editar") return <EditarEvento />;
     return <FichaEvento />;
   }
+  if (partes[0] === "comparar") return <Comparar />;
   if (partes[0] === "personal") return <Personal />;
   if (partes[0] === "material-pop") return <MaterialPop />;
   if (partes[0] === "gastos") return <Gastos />;

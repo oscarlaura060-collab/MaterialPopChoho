@@ -25,7 +25,8 @@ export interface EventoVista extends Evento {
   anio: number;
   mes: number;
   dia: string;                    // DÍA (LUNES..DOMINGO)
-  gasto_pop: number;              // SUMIFS sobre MATERIAL POP
+  gasto_pop: number;              // Σ del material utilizado × costo
+  pop_valor_llevado: number;      // Σ del material llevado × costo (informativo)
   gastos_adicionales: number;     // SUMIFS sobre GASTOS
   gasto_total: number;            // GASTO POP + GASTOS ADICIONALES
   pop_llevado: number;
@@ -53,7 +54,8 @@ export interface MaterialPop {
   cantidad_utilizada: number;     // = LLEVADA − SOBRANTE
   pct_utilizacion: number | null; // = UTILIZADA / LLEVADA
   costo_unitario: number;
-  gasto_material: number;         // = LLEVADA × COSTO UNITARIO
+  gasto_material: number;         // = UTILIZADA × COSTO UNITARIO
+  valor_llevado: number;          // = LLEVADA × COSTO UNITARIO
   observaciones: string | null;
   evento_codigo: string;
   evento_nombre: string;

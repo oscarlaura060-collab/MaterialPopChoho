@@ -28,17 +28,18 @@ export default function MaterialPage() {
   const porMaterial = useMemo(() => {
     const m = new Map<string, {
       material: string; llevada: number; utilizada: number; sobrante: number;
-      gasto: number; costo: number; eventos: Set<string>;
+      gasto: number; valorLlevado: number; costo: number; eventos: Set<string>;
     }>();
     for (const x of filas) {
       const f = m.get(x.material) ?? {
         material: x.material, llevada: 0, utilizada: 0, sobrante: 0,
-        gasto: 0, costo: x.costo_unitario, eventos: new Set<string>(),
+        gasto: 0, valorLlevado: 0, costo: x.costo_unitario, eventos: new Set<string>(),
       };
       f.llevada += x.cantidad_llevada;
       f.utilizada += x.cantidad_utilizada;
       f.sobrante += x.cantidad_sobrante;
       f.gasto += x.gasto_material;
+      f.valorLlevado += x.valor_llevado;
       f.costo = x.costo_unitario || f.costo;
       f.eventos.add(x.evento_id);
       m.set(x.material, f);
@@ -61,6 +62,7 @@ export default function MaterialPage() {
       utilizada: s((m) => m.cantidad_utilizada),
       sobrante: s((m) => m.cantidad_sobrante),
       gasto: s((m) => m.gasto_material),
+      valorLlevado: s((m) => m.valor_llevado),
       util: llevada > 0 ? s((m) => m.cantidad_utilizada) / llevada : null,
     };
   }, [filas]);
@@ -98,7 +100,7 @@ export default function MaterialPage() {
       ) },
     { clave: "costo", titulo: "Costo unit.", alinear: "der", orden: (m) => m.costo_unitario,
       soloEscritorio: true, celda: (m) => <span className="text-neutral-500">{money(m.costo_unitario)}</span> },
-    { clave: "gasto", titulo: "Gasto material", alinear: "der", orden: (m) => m.gasto_material,
+    { clave: "gasto", titulo: "Gasto (utilizado)", alinear: "der", orden: (m) => m.gasto_material,
       celda: (m) => <span className="font-semibold">{money(m.gasto_material)}</span> },
     { clave: "estado", titulo: "Estado", soloEscritorio: true, orden: (m) => m.evento_estado,
       celda: (m) => <Badge estado={m.evento_estado} /> },
@@ -110,7 +112,7 @@ export default function MaterialPage() {
     <>
       <Encabezado
         titulo="Material POP"
-        descripcion="Cantidad utilizada = llevada − sobrante · Gasto = llevada × costo unitario."
+        descripcion="Utilizado = llevado − sobrante · Gasto = utilizado × costo unitario. Lo sobrante vuelve a bodega y no se cobra al evento."
         acciones={
           <button className="btn-secundario" disabled={!filas.length}
             onClick={() => exportarHoja("MATERIAL POP",
@@ -135,7 +137,8 @@ export default function MaterialPage() {
           <Kpi etiqueta="Piezas sobrantes" icono="📤" valor={num(tot.sobrante)} />
           <Kpi etiqueta="Utilización global" icono="📊" valor={pct(tot.util, 1)}
                apoyo="Utilizadas / llevadas" />
-          <Kpi etiqueta="Gasto POP" icono="💰" valor={money(tot.gasto)} acento />
+          <Kpi etiqueta="Gasto POP" icono="💰" valor={money(tot.gasto)} acento
+               apoyo={`Movilizado ${money(tot.valorLlevado)}`} />
         </Fila>
       </div>
 
@@ -153,11 +156,12 @@ export default function MaterialPage() {
               onClick={() => exportarHoja("RESUMEN MATERIAL POP",
                 ["MATERIAL POP", "EVENTOS", "CANTIDAD LLEVADA", "CANTIDAD UTILIZADA",
                  "CANTIDAD SOBRANTE", "% UTILIZACIÓN", "PROMEDIO POR EVENTO",
-                 "COSTO UNITARIO", "GASTO MATERIAL"],
+                 "COSTO UNITARIO", "VALOR LLEVADO", "GASTO MATERIAL"],
                 porMaterial.map((m) => [
                   m.material, m.nEventos, m.llevada, m.utilizada, m.sobrante,
-                  m.pct, Math.round(m.promedio * 10) / 10, m.costo, m.gasto,
-                ]), { F: "0.0%", H: '"$"#,##0', I: '"$"#,##0' })}>
+                  m.pct, Math.round(m.promedio * 10) / 10, m.costo,
+                  m.valorLlevado, m.gasto,
+                ]), { F: "0.0%", H: '"$"#,##0', I: '"$"#,##0', J: '"$"#,##0' })}>
               ⬇ Excel
             </button>
           </header>
@@ -174,6 +178,7 @@ export default function MaterialPage() {
                   <th className="th text-right">% Utilización</th>
                   <th className="th hidden text-right lg:table-cell">Promedio por evento</th>
                   <th className="th hidden text-right lg:table-cell">Costo unit.</th>
+                  <th className="th hidden text-right lg:table-cell">Valor llevado</th>
                   <th className="th text-right">Gasto</th>
                 </tr>
               </thead>
@@ -201,6 +206,9 @@ export default function MaterialPage() {
                     <td className="td hidden text-right tabular-nums text-neutral-500 lg:table-cell">
                       {money(m.costo)}
                     </td>
+                    <td className="td hidden text-right tabular-nums text-neutral-500 lg:table-cell">
+                      {money(m.valorLlevado)}
+                    </td>
                     <td className="td text-right font-semibold tabular-nums">{money(m.gasto)}</td>
                   </tr>
                 ))}
@@ -215,6 +223,9 @@ export default function MaterialPage() {
                   <td className="td text-right font-bold tabular-nums">{pct(tot.util, 1)}</td>
                   <td className="td hidden lg:table-cell" />
                   <td className="td hidden lg:table-cell" />
+                  <td className="td hidden text-right font-bold tabular-nums text-neutral-500 lg:table-cell">
+                    {money(tot.valorLlevado)}
+                  </td>
                   <td className="td text-right font-bold tabular-nums">{money(tot.gasto)}</td>
                 </tr>
               </tfoot>

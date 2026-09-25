@@ -168,7 +168,7 @@ export default function Dashboard() {
             <Kpi etiqueta="Material POP sobrante" icono="📤" valor={num(k.popSobrante)}
                  apoyo={utilGlobal !== null ? `Utilización ${pct(utilGlobal, 1)}` : undefined} />
             <Kpi etiqueta="Gasto POP" icono="🏷️" valor={money(k.gastoPop)}
-                 apoyo="Cantidad llevada × costo unitario" />
+                 apoyo="Material utilizado × costo unitario" />
             <Kpi etiqueta="Gastos adicionales" icono="🧾" valor={money(k.gastoAdic)}
                  apoyo={`${gastos.length} registros`} />
             <Kpi etiqueta="Gasto total" icono="💰" valor={money(gastoTotal)} acento

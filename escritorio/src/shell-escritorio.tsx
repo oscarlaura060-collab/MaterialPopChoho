@@ -6,6 +6,7 @@ import { useApp } from "@/lib/store";
 const MENU = [
   { href: "/", icono: "📊", texto: "Dashboard" },
   { href: "/eventos", icono: "📅", texto: "Eventos" },
+  { href: "/comparar", icono: "⚖️", texto: "Comparar" },
   { href: "/personal", icono: "👥", texto: "Personal" },
   { href: "/material-pop", icono: "📦", texto: "Material POP" },
   { href: "/gastos", icono: "💰", texto: "Gastos" },

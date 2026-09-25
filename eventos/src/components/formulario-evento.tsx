@@ -162,7 +162,9 @@ export function FormularioEvento({ evento }: { evento?: EventoVista }) {
 
   // Totales en vivo, con la misma lógica del Excel
   const totales = useMemo(() => {
-    const pop = material.reduce((a, m) => a + n(m.cantidad_llevada) * n(m.costo_unitario), 0);
+    // El gasto cuenta solo lo consumido: (llevada − sobrante) × costo
+    const pop = material.reduce(
+      (a, m) => a + Math.max(0, n(m.cantidad_llevada) - n(m.cantidad_sobrante)) * n(m.costo_unitario), 0);
     const adic = gastos.reduce((a, g) => a + n(g.valor), 0);
     return { pop, adic, total: pop + adic };
   }, [material, gastos]);
@@ -430,7 +432,7 @@ export function FormularioEvento({ evento }: { evento?: EventoVista }) {
       <Paso
         numero={3}
         titulo="Material POP"
-        descripcion="Registra lo llevado y lo sobrante; lo utilizado, el % y el costo se calculan solos."
+        descripcion="Registra lo llevado y lo sobrante. El gasto cuenta solo lo utilizado; lo sobrante vuelve a bodega."
       >
         <div className="space-y-3">
           {material.map((m, i) => {
@@ -480,7 +482,7 @@ export function FormularioEvento({ evento }: { evento?: EventoVista }) {
                 <p className={`mt-2 text-xs ${excede ? "font-semibold text-choho-red" : "text-neutral-600"}`}>
                   {excede
                     ? "La cantidad sobrante no puede superar la llevada."
-                    : <>Utilizado <strong>{num(util)}</strong> · Utilización <strong>{pct(llev ? util / llev : null, 1)}</strong> · Costo <strong>{money(llev * n(m.costo_unitario))}</strong></>}
+                    : <>Utilizado <strong>{num(util)}</strong> · Utilización <strong>{pct(llev ? util / llev : null, 1)}</strong> · Gasto <strong>{money(util * n(m.costo_unitario))}</strong> <span className="text-neutral-400">(llevado {money(llev * n(m.costo_unitario))})</span></>}
                 </p>
               </div>
             );

@@ -42,6 +42,11 @@ poner toda la carpeta dentro de OneDrive para tener copia automática.
 
 ## Compartir con los jefes
 
+El informe es una **aplicación en un solo archivo**: tiene su propio
+dashboard con pestañas (Resumen · Eventos · Material POP · Gastos · Personal),
+filtros que se tocan, gráficos que filtran todo el informe al hacer clic, y la
+ficha de cada evento se abre desde una lista, sin tener que bajar y bajar.
+
 En la sección **📤 Compartir**:
 
 1. Filtra los eventos que quieras incluir (mes, ciudad, responsable…).
@@ -75,7 +80,7 @@ archivo las veces que quieras: actualiza en vez de duplicar.
 | --- | --- |
 | `CANTIDAD UTILIZADA = LLEVADA − SOBRANTE` | se calcula sola |
 | `% UTILIZACIÓN = UTILIZADA / LLEVADA` | se calcula sola |
-| `GASTO MATERIAL = LLEVADA × COSTO UNITARIO` | se calcula sola |
+| `GASTO MATERIAL = LLEVADA × COSTO UNITARIO` | **cambiado:** ahora es `UTILIZADO × COSTO UNITARIO` |
 | `COSTO UNITARIO` buscado en el catálogo | se aplica al elegir el material |
 | `GASTO POP = SUMIFS(MATERIAL POP)` | por evento |
 | `GASTO TOTAL = GASTO POP + GASTOS ADICIONALES` | por evento |
@@ -85,6 +90,11 @@ archivo las veces que quieras: actualiza en vez de duplicar.
 
 Igual que en el Excel, **tú registras la cantidad llevada y la sobrante**; la
 utilizada se deduce.
+
+> **Diferencia con el Excel.** El libro cobraba al evento todo el material
+> llevado. Aquí el gasto cuenta solo lo **utilizado**: lo sobrante vuelve a
+> bodega y no se carga al evento. El valor de lo movilizado se conserva como
+> dato aparte, en la ficha del evento y en las exportaciones.
 
 ---
 

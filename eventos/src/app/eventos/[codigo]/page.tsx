@@ -198,7 +198,7 @@ export default function FichaEvento() {
                     <th className="th text-right">Sobrante</th>
                     <th className="th text-right">% Utilización</th>
                     <th className="th text-right">Costo unit.</th>
-                    <th className="th text-right">Costo</th>
+                    <th className="th text-right">Gasto</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-100">
@@ -239,6 +239,10 @@ export default function FichaEvento() {
                   </tr>
                 </tfoot>
               </table>
+              <p className="border-t border-neutral-200 px-4 py-3 text-xs text-neutral-500 sm:px-5">
+                El gasto cuenta solo el material <strong>utilizado</strong>. Se movilizaron{" "}
+                {money(evento.pop_valor_llevado)} en material; lo sobrante volvió a bodega.
+              </p>
             </div>
           )}
         </Seccion>

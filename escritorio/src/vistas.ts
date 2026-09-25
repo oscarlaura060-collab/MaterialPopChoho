@@ -5,7 +5,8 @@
  *
  *   UTILIZADA      = LLEVADA − SOBRANTE
  *   % UTILIZACIÓN  = UTILIZADA / LLEVADA
- *   GASTO MATERIAL = LLEVADA × COSTO UNITARIO
+ *   GASTO MATERIAL = UTILIZADA × COSTO UNITARIO   (solo lo consumido)
+ *   VALOR LLEVADO  = LLEVADA  × COSTO UNITARIO    (lo movilizado, informativo)
  *   GASTO POP      = Σ GASTO MATERIAL del evento
  *   GASTO TOTAL    = GASTO POP + Σ VALOR de los gastos adicionales
  *   HORAS          = MOD(SALIDA − INGRESO)
@@ -71,7 +72,8 @@ export function materialPop(t: Tablas): Registro[] {
       cantidad_utilizada: utilizada,
       pct_utilizacion: llevada > 0 ? utilizada / llevada : null,
       costo_unitario: costo,
-      gasto_material: llevada * costo,
+      gasto_material: utilizada * costo,
+      valor_llevado: llevada * costo,
       evento_codigo: e.codigo ?? "",
       evento_nombre: e.nombre ?? "",
       evento_fecha: e.fecha ?? "",
@@ -162,6 +164,7 @@ export function eventos(t: Tablas): Registro[] {
     const r = resDe.get(e.id);
 
     const gastoPop = ms.reduce((a, m) => a + n(m.gasto_material), 0);
+    const valorLlevado = ms.reduce((a, m) => a + n(m.valor_llevado), 0);
     const gastosAdic = gs.reduce((a, g) => a + n(g.valor), 0);
 
     const asignado = ps.length;
@@ -179,6 +182,7 @@ export function eventos(t: Tablas): Registro[] {
       mes: mes || 0,
       dia: diaSemana(fecha),
       gasto_pop: gastoPop,
+      pop_valor_llevado: valorLlevado,
       gastos_adicionales: gastosAdic,
       gasto_total: gastoPop + gastosAdic,
       pop_llevado: ms.reduce((a, m) => a + n(m.cantidad_llevada), 0),

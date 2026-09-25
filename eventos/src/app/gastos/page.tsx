@@ -90,7 +90,7 @@ export default function GastosPage() {
       <div className="mb-5">
         <Fila>
           <Kpi etiqueta="Gasto POP" icono="📦" valor={money(gastoPop)}
-               apoyo="Material llevado × costo unitario" />
+               apoyo="Material utilizado × costo unitario" />
           <Kpi etiqueta="Gastos adicionales" icono="🧾" valor={money(gastoAdic)}
                apoyo={`${filas.length} registros`} />
           <Kpi etiqueta="Gasto total" icono="💰" valor={money(gastoPop + gastoAdic)} acento />

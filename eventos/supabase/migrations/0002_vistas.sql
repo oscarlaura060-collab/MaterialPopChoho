@@ -31,6 +31,7 @@ select
   (array['LUNES','MARTES','MIÉRCOLES','JUEVES','VIERNES','SÁBADO','DOMINGO'])
     [extract(isodow from e.fecha)::int] as dia,
   coalesce(mp.gasto_pop, 0)                                     as gasto_pop,
+  coalesce(mp.valor_llevado, 0)                                 as pop_valor_llevado,
   coalesce(g.gastos_adicionales, 0)                             as gastos_adicionales,
   coalesce(mp.gasto_pop, 0) + coalesce(g.gastos_adicionales, 0) as gasto_total,
   coalesce(mp.pop_llevado, 0)                                   as pop_llevado,
@@ -51,6 +52,7 @@ select
 from eventos.eventos e
 left join lateral (
   select sum(m.gasto_material)     as gasto_pop,
+         sum(m.valor_llevado)      as valor_llevado,
          sum(m.cantidad_llevada)   as pop_llevado,
          sum(m.cantidad_utilizada) as pop_utilizado,
          sum(m.cantidad_sobrante)  as pop_sobrante

@@ -87,11 +87,13 @@ create table eventos.participacion (
 create index on eventos.participacion (evento_id);
 
 -- ---------- MATERIAL POP ----------
--- Se registran CANTIDAD LLEVADA y CANTIDAD SOBRANTE; el resto se calcula
--- igual que en el Excel:
+-- Se registran CANTIDAD LLEVADA y CANTIDAD SOBRANTE; el resto se calcula:
 --   UTILIZADA      = LLEVADA - SOBRANTE
 --   % UTILIZACIÓN  = UTILIZADA / LLEVADA
---   GASTO MATERIAL = LLEVADA * COSTO UNITARIO
+--   GASTO MATERIAL = UTILIZADA * COSTO UNITARIO   <- solo lo consumido
+--   VALOR LLEVADO  = LLEVADA  * COSTO UNITARIO    <- lo movilizado (informativo)
+-- El Excel cobraba todo lo llevado; aquí el gasto refleja lo que de verdad
+-- se consumió, y lo sobrante vuelve a bodega sin cargarse al evento.
 create table eventos.material_pop (
   id                 uuid primary key default gen_random_uuid(),
   evento_id          uuid not null references eventos.eventos(id) on delete cascade,
@@ -109,6 +111,8 @@ create table eventos.material_pop (
            then (cantidad_llevada - cantidad_sobrante) / cantidad_llevada
            else null end) stored,
   gasto_material     numeric(14,2)
+    generated always as ((cantidad_llevada - cantidad_sobrante) * costo_unitario) stored,
+  valor_llevado      numeric(14,2)
     generated always as (cantidad_llevada * costo_unitario) stored,
   constraint material_pop_sobrante_valido
     check (cantidad_sobrante >= 0 and cantidad_sobrante <= cantidad_llevada)
